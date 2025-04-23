@@ -1,3 +1,4 @@
+
 import { useLocation, useNavigate } from "react-router-dom";
 import WebsiteLayout from "@/components/layout/WebsiteLayout";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ const OrderReviewPage = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { cartItems } = useCart();
+  const { cartItems, clearCart } = useCart();
   
   if (!state?.orderData || !state?.formData) {
     navigate('/checkout');
@@ -26,6 +27,9 @@ const OrderReviewPage = () => {
   const handleConfirmOrder = async () => {
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Clear the cart after successful order
+      clearCart();
       
       navigate('/order-success', {
         state: {
@@ -55,15 +59,31 @@ const OrderReviewPage = () => {
           </>
         );
       case 'mtn-money':
+        return (
+          <>
+            <p><span className="font-medium">Mobile Money Number:</span> {formData.mobileNumber}</p>
+            <p><span className="font-medium">Network:</span> MTN</p>
+          </>
+        );
       case 'vodafone-cash':
         return (
           <>
             <p><span className="font-medium">Mobile Money Number:</span> {formData.mobileNumber}</p>
-            <p><span className="font-medium">Network:</span> {formData.network}</p>
+            <p><span className="font-medium">Network:</span> Vodafone</p>
           </>
         );
       default:
         return null;
+    }
+  };
+
+  const getPaymentMethodDisplay = (method: string) => {
+    switch(method) {
+      case 'credit-card': return 'Credit Card';
+      case 'mtn-money': return 'MTN Mobile Money';
+      case 'vodafone-cash': return 'Vodafone Cash';
+      case 'bank-transfer': return 'Bank Transfer';
+      default: return method.replace(/-/g, ' ');
     }
   };
 
@@ -89,7 +109,7 @@ const OrderReviewPage = () => {
 
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-bold mb-4">Payment Method</h2>
-              <p className="capitalize mb-4">{formData.paymentMethod.replace(/-/g, ' ')}</p>
+              <p className="mb-4">{getPaymentMethodDisplay(formData.paymentMethod)}</p>
               {renderPaymentDetails()}
             </div>
           </div>

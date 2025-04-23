@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import WebsiteLayout from "@/components/layout/WebsiteLayout";
@@ -6,10 +7,60 @@ import {
   Award, 
   Users, 
   Wrench, 
-  ShieldCheck 
+  ShieldCheck,
+  ShoppingCart 
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/contexts/CartContext";
 
 const HomePage = () => {
+  const { toast } = useToast();
+  const { addToCart } = useCart();
+  
+  const featuredProducts = [
+    {
+      id: 1,
+      name: "Premium Electric Product",
+      price: 299.99,
+      image: "/placeholder.svg",
+      rating: 5,
+      description: "High-quality electrical product with advanced features and energy efficiency."
+    },
+    {
+      id: 2,
+      name: "Premium Electric Product",
+      price: 299.99,
+      image: "/placeholder.svg",
+      rating: 5,
+      description: "High-quality electrical product with advanced features and energy efficiency."
+    },
+    {
+      id: 3,
+      name: "Premium Electric Product",
+      price: 299.99,
+      image: "/placeholder.svg",
+      rating: 5,
+      description: "High-quality electrical product with advanced features and energy efficiency."
+    }
+  ];
+
+  const handleAddToCart = (product: any) => {
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      image: product.image
+    };
+    
+    addToCart(cartItem);
+    
+    toast({
+      title: "Added to cart",
+      description: `${product.name} has been added to your cart.`,
+    });
+  };
+
   return (
     <WebsiteLayout>
       {/* Hero Section */}
@@ -88,28 +139,37 @@ const HomePage = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[1, 2, 3].map((item) => (
-              <div key={item} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+            {featuredProducts.map((product) => (
+              <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
                 <div className="bg-gray-100 p-6 flex items-center justify-center h-64">
                   <img
-                    src="/placeholder.svg"
-                    alt="Product"
+                    src={product.image}
+                    alt={product.name}
                     className="max-h-full"
                   />
                 </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-bold mb-2">Premium Electric Product</h3>
+                  <h3 className="text-xl font-bold mb-2">{product.name}</h3>
                   <div className="flex text-yellow-400 mb-2">
-                    {[...Array(5)].map((_, i) => (
+                    {[...Array(product.rating)].map((_, i) => (
                       <span key={i}>★</span>
                     ))}
                   </div>
                   <p className="text-gray-600 mb-4">
-                    High-quality electrical product with advanced features and energy efficiency.
+                    {product.description}
                   </p>
                   <div className="flex justify-between items-center">
-                    <span className="text-xl font-bold text-electric-blue">$299.99</span>
-                    <Button className="btn-electric-primary">Add to Cart</Button>
+                    <span className="text-xl font-bold text-electric-blue">₵{product.price.toFixed(2)}</span>
+                    <Button 
+                      className="btn-electric-primary"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleAddToCart(product);
+                      }}
+                    >
+                      <ShoppingCart size={16} className="mr-1" />
+                      Add to Cart
+                    </Button>
                   </div>
                 </div>
               </div>
