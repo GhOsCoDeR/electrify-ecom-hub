@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -10,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { CreditCard, Landmark, Truck } from "lucide-react";
+import { CreditCard, Landmark, Truck, PhoneCall, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 
@@ -23,7 +22,12 @@ const checkoutSchema = z.object({
   city: z.string().min(1, "City is required"),
   state: z.string().min(1, "State is required"),
   zipCode: z.string().min(1, "ZIP code is required"),
-  paymentMethod: z.enum(["credit-card", "bank-transfer", "cash-on-delivery"]),
+  paymentMethod: z.enum(["credit-card", "mtn-money", "vodafone-cash", "bank-transfer"]),
+  cardNumber: z.string().optional(),
+  cardExpiry: z.string().optional(),
+  cardCvc: z.string().optional(),
+  mobileNumber: z.string().optional(),
+  network: z.string().optional(),
 });
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>;
@@ -32,6 +36,7 @@ const CheckoutPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("credit-card");
   const { cartItems } = useCart();
   
   const {
@@ -45,56 +50,84 @@ const CheckoutPage = () => {
     },
   });
 
-  // Calculate order summary
   const calculateSubtotal = () => {
     return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
   
   const subtotal = calculateSubtotal();
-  const shipping = 15.00;
+  const shipping = 50.00; // 50 GHS for shipping
   const tax = subtotal * 0.07; // 7% tax
   const total = subtotal + shipping + tax;
 
-  const orderSummary = {
-    items: cartItems,
-    subtotal,
-    shipping,
-    tax,
-    total
+  const handlePaymentMethodChange = (value: string) => {
+    setSelectedPaymentMethod(value);
   };
 
-  const onSubmit = async (data: CheckoutFormValues) => {
-    setIsSubmitting(true);
-    
-    try {
-      if (cartItems.length === 0) {
-        toast({
-          title: "Cart is empty",
-          description: "Please add items to your cart before proceeding to checkout.",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
+  const renderPaymentDetails = () => {
+    switch (selectedPaymentMethod) {
+      case 'credit-card':
+        return (
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="cardNumber">Card Number</Label>
+              <Input
+                id="cardNumber"
+                placeholder="1234 5678 9012 3456"
+                {...register("cardNumber")}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="cardExpiry">Expiry Date</Label>
+                <Input
+                  id="cardExpiry"
+                  placeholder="MM/YY"
+                  {...register("cardExpiry")}
+                />
+              </div>
+              <div>
+                <Label htmlFor="cardCvc">CVC</Label>
+                <Input
+                  id="cardCvc"
+                  placeholder="123"
+                  type="password"
+                  maxLength={3}
+                  {...register("cardCvc")}
+                />
+              </div>
+            </div>
+          </div>
+        );
       
-      navigate('/order-review', {
-        state: {
-          formData: data,
-          orderData: orderSummary
-        }
-      });
-    } catch (error) {
-      toast({
-        title: "Error processing checkout",
-        description: "There was an error processing your checkout. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
+      case 'mtn-money':
+      case 'vodafone-cash':
+        return (
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="mobileNumber">Mobile Money Number</Label>
+              <Input
+                id="mobileNumber"
+                placeholder="024 XXX XXXX"
+                {...register("mobileNumber")}
+              />
+            </div>
+            <div>
+              <Label htmlFor="network">Network</Label>
+              <Input
+                id="network"
+                value={selectedPaymentMethod === 'mtn-money' ? 'MTN' : 'Vodafone'}
+                disabled
+                {...register("network")}
+              />
+            </div>
+          </div>
+        );
+      
+      default:
+        return null;
     }
   };
 
-  // Redirect to cart if empty
   if (cartItems.length === 0) {
     navigate('/cart');
     return null;
@@ -227,7 +260,12 @@ const CheckoutPage = () => {
                 <div>
                   <h2 className="text-xl font-bold mb-4">Payment Method</h2>
                   
-                  <RadioGroup defaultValue="credit-card" className="space-y-4">
+                  <RadioGroup 
+                    defaultValue="credit-card" 
+                    className="space-y-4"
+                    value={selectedPaymentMethod}
+                    onValueChange={handlePaymentMethodChange}
+                  >
                     <div className="flex items-center space-x-3 border rounded-md p-3 cursor-pointer hover:border-electric-blue transition-colors">
                       <RadioGroupItem value="credit-card" id="credit-card" {...register("paymentMethod")} />
                       <Label htmlFor="credit-card" className="flex items-center cursor-pointer">
@@ -237,21 +275,23 @@ const CheckoutPage = () => {
                     </div>
                     
                     <div className="flex items-center space-x-3 border rounded-md p-3 cursor-pointer hover:border-electric-blue transition-colors">
-                      <RadioGroupItem value="bank-transfer" id="bank-transfer" {...register("paymentMethod")} />
-                      <Label htmlFor="bank-transfer" className="flex items-center cursor-pointer">
-                        <Landmark className="mr-2" size={18} />
-                        Bank Transfer
+                      <RadioGroupItem value="mtn-money" id="mtn-money" {...register("paymentMethod")} />
+                      <Label htmlFor="mtn-money" className="flex items-center cursor-pointer">
+                        <PhoneCall className="mr-2" size={18} />
+                        MTN Mobile Money
                       </Label>
                     </div>
                     
                     <div className="flex items-center space-x-3 border rounded-md p-3 cursor-pointer hover:border-electric-blue transition-colors">
-                      <RadioGroupItem value="cash-on-delivery" id="cash-on-delivery" {...register("paymentMethod")} />
-                      <Label htmlFor="cash-on-delivery" className="flex items-center cursor-pointer">
-                        <Truck className="mr-2" size={18} />
-                        Cash on Delivery
+                      <RadioGroupItem value="vodafone-cash" id="vodafone-cash" {...register("paymentMethod")} />
+                      <Label htmlFor="vodafone-cash" className="flex items-center cursor-pointer">
+                        <Phone className="mr-2" size={18} />
+                        Vodafone Cash
                       </Label>
                     </div>
                   </RadioGroup>
+
+                  {renderPaymentDetails()}
                 </div>
                 
                 <Button 
@@ -275,7 +315,7 @@ const CheckoutPage = () => {
                     <p className="font-medium">{item.name}</p>
                     <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                   </div>
-                  <p>${(item.price * item.quantity).toFixed(2)}</p>
+                  <p>₵{(item.price * item.quantity).toFixed(2)}</p>
                 </div>
               ))}
               
@@ -284,15 +324,15 @@ const CheckoutPage = () => {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>₵{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
-                  <span>${shipping.toFixed(2)}</span>
+                  <span>₵{shipping.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>₵{tax.toFixed(2)}</span>
                 </div>
               </div>
               
@@ -300,7 +340,7 @@ const CheckoutPage = () => {
               
               <div className="flex justify-between font-bold">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>₵{total.toFixed(2)}</span>
               </div>
             </div>
           </div>

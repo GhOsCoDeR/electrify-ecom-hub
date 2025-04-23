@@ -1,4 +1,3 @@
-
 import { useLocation, useNavigate } from "react-router-dom";
 import WebsiteLayout from "@/components/layout/WebsiteLayout";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,6 @@ const OrderReviewPage = () => {
   const { toast } = useToast();
   const { cartItems } = useCart();
   
-  // If no order data, redirect back to checkout
   if (!state?.orderData || !state?.formData) {
     navigate('/checkout');
     return null;
@@ -20,7 +18,6 @@ const OrderReviewPage = () => {
 
   const { orderData, formData } = state;
 
-  // Verify cart hasn't changed
   if (cartItems.length === 0) {
     navigate('/cart');
     return null;
@@ -28,10 +25,8 @@ const OrderReviewPage = () => {
 
   const handleConfirmOrder = async () => {
     try {
-      // Simulate order confirmation
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Navigate to success page with order details
       navigate('/order-success', {
         state: {
           orderNumber: Math.floor(100000 + Math.random() * 900000),
@@ -45,6 +40,30 @@ const OrderReviewPage = () => {
         description: "There was a problem confirming your order. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  const renderPaymentDetails = () => {
+    const { paymentMethod } = formData;
+    
+    switch (paymentMethod) {
+      case 'credit-card':
+        return (
+          <>
+            <p><span className="font-medium">Card Number:</span> **** **** **** {formData.cardNumber?.slice(-4)}</p>
+            <p><span className="font-medium">Expiry:</span> {formData.cardExpiry}</p>
+          </>
+        );
+      case 'mtn-money':
+      case 'vodafone-cash':
+        return (
+          <>
+            <p><span className="font-medium">Mobile Money Number:</span> {formData.mobileNumber}</p>
+            <p><span className="font-medium">Network:</span> {formData.network}</p>
+          </>
+        );
+      default:
+        return null;
     }
   };
 
@@ -70,7 +89,8 @@ const OrderReviewPage = () => {
 
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-bold mb-4">Payment Method</h2>
-              <p className="capitalize">{formData.paymentMethod.replace(/-/g, ' ')}</p>
+              <p className="capitalize mb-4">{formData.paymentMethod.replace(/-/g, ' ')}</p>
+              {renderPaymentDetails()}
             </div>
           </div>
 
@@ -84,7 +104,7 @@ const OrderReviewPage = () => {
                     <p className="font-medium">{item.name}</p>
                     <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                   </div>
-                  <p>${(item.price * item.quantity).toFixed(2)}</p>
+                  <p>₵{(item.price * item.quantity).toFixed(2)}</p>
                 </div>
               ))}
               
@@ -93,20 +113,20 @@ const OrderReviewPage = () => {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>${orderData.subtotal.toFixed(2)}</span>
+                  <span>₵{orderData.subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
-                  <span>${orderData.shipping.toFixed(2)}</span>
+                  <span>₵{orderData.shipping.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax</span>
-                  <span>${orderData.tax.toFixed(2)}</span>
+                  <span>₵{orderData.tax.toFixed(2)}</span>
                 </div>
                 <Separator className="my-2" />
                 <div className="flex justify-between font-bold">
                   <span>Total</span>
-                  <span>${orderData.total.toFixed(2)}</span>
+                  <span>₵{orderData.total.toFixed(2)}</span>
                 </div>
               </div>
             </div>

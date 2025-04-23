@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -65,7 +64,7 @@ const ProductCard = ({ product, viewMode }: ProductCardProps) => {
               ))}
               <span className="text-sm text-gray-600 ml-1">({product.rating})</span>
             </div>
-            <div className="text-xl font-bold mt-auto">${product.price.toFixed(2)}</div>
+            <div className="text-xl font-bold mt-auto">₵{product.price.toFixed(2)}</div>
             <div className="grid grid-cols-2 gap-2 mt-3">
               <Button 
                 className="btn-electric-primary w-full" 
@@ -107,7 +106,7 @@ const ProductCard = ({ product, viewMode }: ProductCardProps) => {
                 <p className="text-sm text-electric-blue">{product.category.replace('-', ' ').toUpperCase()}</p>
                 <h3 className="text-xl font-semibold">{product.name}</h3>
               </div>
-              <div className="text-xl font-bold">${product.price.toFixed(2)}</div>
+              <div className="text-xl font-bold">₵{product.price.toFixed(2)}</div>
             </div>
             
             <div className="flex items-center mt-1 mb-3">
