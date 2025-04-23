@@ -1,42 +1,15 @@
 
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Trash2, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import WebsiteLayout from "@/components/layout/WebsiteLayout";
-
-// Mock cart data - in a real app, this would come from context/state
-const initialCartItems = [
-  {
-    id: 1,
-    name: "Premium Electric Mixer",
-    price: 249.99,
-    quantity: 1,
-    image: "/placeholder.svg"
-  },
-  {
-    id: 2,
-    name: "Smart LED Bulb",
-    price: 34.99,
-    quantity: 2,
-    image: "/placeholder.svg"
-  }
-];
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
 
 const CartPage = () => {
-  const [cartItems, setCartItems] = useState(initialCartItems);
-
-  const updateQuantity = (id: number, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    
-    setCartItems(cartItems.map(item => 
-      item.id === id ? {...item, quantity: newQuantity} : item
-    ));
-  };
-
-  const removeItem = (id: number) => {
-    setCartItems(cartItems.filter(item => item.id !== id));
-  };
+  const { cartItems, updateQuantity, removeFromCart } = useCart();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const calculateSubtotal = () => {
     return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
@@ -46,6 +19,19 @@ const CartPage = () => {
   const shipping = 15.00;
   const tax = subtotal * 0.07; // 7% tax
   const total = subtotal + shipping + tax;
+
+  const handleCheckout = () => {
+    if (cartItems.length === 0) {
+      toast({
+        title: "Cart is empty",
+        description: "Please add items to your cart before proceeding to checkout.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    navigate('/checkout');
+  };
 
   return (
     <WebsiteLayout>
@@ -76,7 +62,7 @@ const CartPage = () => {
                             variant="ghost" 
                             size="sm" 
                             className="text-red-500 p-0 h-auto mt-1 md:hidden"
-                            onClick={() => removeItem(item.id)}
+                            onClick={() => removeFromCart(item.id)}
                           >
                             <Trash2 size={16} className="mr-1" />
                             Remove
@@ -121,7 +107,7 @@ const CartPage = () => {
                           variant="ghost" 
                           size="sm" 
                           className="text-red-500 hidden md:flex items-center"
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => removeFromCart(item.id)}
                         >
                           <Trash2 size={16} />
                         </Button>
@@ -163,11 +149,12 @@ const CartPage = () => {
                 </div>
               </div>
               
-              <Link to="/checkout" className="block mt-6">
-                <Button className="w-full bg-electric-blue text-white hover:bg-blue-700">
-                  Proceed to Checkout
-                </Button>
-              </Link>
+              <Button 
+                onClick={handleCheckout}
+                className="w-full mt-6 bg-electric-blue text-white hover:bg-blue-700"
+              >
+                Proceed to Checkout
+              </Button>
             </div>
           </div>
         ) : (

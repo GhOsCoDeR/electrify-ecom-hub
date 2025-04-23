@@ -4,11 +4,13 @@ import WebsiteLayout from "@/components/layout/WebsiteLayout";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/contexts/CartContext";
 
 const OrderReviewPage = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { cartItems } = useCart();
   
   // If no order data, redirect back to checkout
   if (!state?.orderData || !state?.formData) {
@@ -17,6 +19,12 @@ const OrderReviewPage = () => {
   }
 
   const { orderData, formData } = state;
+
+  // Verify cart hasn't changed
+  if (cartItems.length === 0) {
+    navigate('/cart');
+    return null;
+  }
 
   const handleConfirmOrder = async () => {
     try {

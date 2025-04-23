@@ -3,9 +3,11 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ShoppingCart, User } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
 
 const WebsiteNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { getCartCount } = useCart();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -36,8 +38,13 @@ const WebsiteNavbar = () => {
             <Link to="/shop">
               <Button className="btn-electric-primary">Shop Now</Button>
             </Link>
-            <Link to="/cart" className="text-electric-darkgray hover:text-electric-blue">
+            <Link to="/cart" className="text-electric-darkgray hover:text-electric-blue relative">
               <ShoppingCart size={24} />
+              {getCartCount() > 0 && (
+                <div className="absolute -top-2 -right-2 bg-electric-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                  {getCartCount()}
+                </div>
+              )}
             </Link>
             <Link to="/login" className="text-electric-darkgray hover:text-electric-blue">
               <User size={24} />
@@ -94,8 +101,13 @@ const WebsiteNavbar = () => {
                   <Button className="btn-electric-primary">Shop Now</Button>
                 </Link>
                 <div className="flex space-x-4">
-                  <Link to="/cart" className="text-electric-darkgray hover:text-electric-blue" onClick={toggleMenu}>
+                  <Link to="/cart" className="text-electric-darkgray hover:text-electric-blue relative" onClick={toggleMenu}>
                     <ShoppingCart size={24} />
+                    {getCartCount() > 0 && (
+                      <div className="absolute -top-2 -right-2 bg-electric-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                        {getCartCount()}
+                      </div>
+                    )}
                   </Link>
                   <Link to="/login" className="text-electric-darkgray hover:text-electric-blue" onClick={toggleMenu}>
                     <User size={24} />

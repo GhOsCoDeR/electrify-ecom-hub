@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -11,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Landmark, Truck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useCart } from "@/contexts/CartContext";
 
 const checkoutSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -30,6 +32,7 @@ const CheckoutPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { cartItems } = useCart();
   
   const {
     register,
@@ -42,21 +45,38 @@ const CheckoutPage = () => {
     },
   });
 
+  // Calculate order summary
+  const calculateSubtotal = () => {
+    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+  };
+  
+  const subtotal = calculateSubtotal();
+  const shipping = 15.00;
+  const tax = subtotal * 0.07; // 7% tax
+  const total = subtotal + shipping + tax;
+
   const orderSummary = {
-    items: [
-      { id: 1, name: "Premium Electric Mixer", quantity: 1, price: 249.99 },
-      { id: 2, name: "Smart LED Bulb", quantity: 2, price: 34.99 }
-    ],
-    subtotal: 319.97,
-    shipping: 15.00,
-    tax: 22.40,
-    total: 357.37
+    items: cartItems,
+    subtotal,
+    shipping,
+    tax,
+    total
   };
 
   const onSubmit = async (data: CheckoutFormValues) => {
     setIsSubmitting(true);
     
     try {
+      if (cartItems.length === 0) {
+        toast({
+          title: "Cart is empty",
+          description: "Please add items to your cart before proceeding to checkout.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
       navigate('/order-review', {
         state: {
           formData: data,
@@ -73,6 +93,12 @@ const CheckoutPage = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Redirect to cart if empty
+  if (cartItems.length === 0) {
+    navigate('/cart');
+    return null;
+  }
 
   return (
     <WebsiteLayout>
@@ -243,7 +269,7 @@ const CheckoutPage = () => {
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
               <h2 className="text-xl font-bold mb-4">Order Summary</h2>
               
-              {orderSummary.items.map(item => (
+              {cartItems.map(item => (
                 <div key={item.id} className="flex justify-between items-center mb-3">
                   <div>
                     <p className="font-medium">{item.name}</p>
@@ -258,15 +284,15 @@ const CheckoutPage = () => {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>${orderSummary.subtotal.toFixed(2)}</span>
+                  <span>${subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
-                  <span>${orderSummary.shipping.toFixed(2)}</span>
+                  <span>${shipping.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax</span>
-                  <span>${orderSummary.tax.toFixed(2)}</span>
+                  <span>${tax.toFixed(2)}</span>
                 </div>
               </div>
               
@@ -274,7 +300,7 @@ const CheckoutPage = () => {
               
               <div className="flex justify-between font-bold">
                 <span>Total</span>
-                <span>${orderSummary.total.toFixed(2)}</span>
+                <span>${total.toFixed(2)}</span>
               </div>
             </div>
           </div>
