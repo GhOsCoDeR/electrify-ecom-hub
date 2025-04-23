@@ -1,7 +1,8 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate } from "react-router-dom";
 import WebsiteLayout from "@/components/layout/WebsiteLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +10,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { CreditCard, Landmark, Truck, PhoneCall, Phone } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { CreditCard, PhoneCall, Phone } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
 const checkoutSchema = z.object({
@@ -37,7 +37,7 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("credit-card");
-  const { cartItems } = useCart();
+  const { cartItems, clearCart } = useCart();
   
   const {
     register,
@@ -54,10 +54,39 @@ const CheckoutPage = () => {
     return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
   
-  const subtotal = calculateSubtotal();
-  const shipping = 50.00; // 50 GHS for shipping
-  const tax = subtotal * 0.07; // 7% tax
-  const total = subtotal + shipping + tax;
+  const onSubmit = async (data: CheckoutFormValues) => {
+    try {
+      setIsSubmitting(true);
+
+      const subtotal = calculateSubtotal();
+      const shipping = 50.00; // 50 GHS for shipping
+      const tax = subtotal * 0.07; // 7% tax
+      const total = subtotal + shipping + tax;
+
+      const orderData = {
+        items: cartItems,
+        subtotal,
+        shipping,
+        tax,
+        total
+      };
+
+      navigate('/order-review', {
+        state: { 
+          orderData, 
+          formData: data 
+        }
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "There was a problem processing your order. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handlePaymentMethodChange = (value: string) => {
     setSelectedPaymentMethod(value);
