@@ -54,14 +54,14 @@ const CheckoutPage = () => {
     return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
   
+  const subtotal = calculateSubtotal();
+  const shipping = 50.00; // 50 GHS for shipping
+  const tax = subtotal * 0.07; // 7% tax
+  const total = subtotal + shipping + tax;
+  
   const onSubmit = async (data: CheckoutFormValues) => {
     try {
       setIsSubmitting(true);
-
-      const subtotal = calculateSubtotal();
-      const shipping = 50.00; // 50 GHS for shipping
-      const tax = subtotal * 0.07; // 7% tax
-      const total = subtotal + shipping + tax;
 
       const orderData = {
         items: cartItems,
@@ -157,8 +157,13 @@ const CheckoutPage = () => {
     }
   };
 
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      navigate('/cart');
+    }
+  }, [cartItems.length, navigate]);
+
   if (cartItems.length === 0) {
-    navigate('/cart');
     return null;
   }
 
