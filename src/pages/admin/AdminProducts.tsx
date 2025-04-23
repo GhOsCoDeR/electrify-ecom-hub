@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +9,6 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import { ProductType } from "@/types/product";
 import { Pencil, Trash2, Plus, Search } from "lucide-react";
 
-// Mock products data
 const initialProducts: ProductType[] = [
   {
     id: 1,
@@ -64,7 +62,20 @@ const AdminProducts = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
 
-  // Filter products based on search query
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCurrentProduct(prev => ({
+          ...prev,
+          image: reader.result as string
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -102,7 +113,6 @@ const AdminProducts = () => {
 
   const handleSaveProduct = () => {
     if (isEditing) {
-      // Update existing product
       setProducts(products.map(product => 
         product.id === currentProduct.id ? { ...currentProduct as ProductType } : product
       ));
@@ -112,7 +122,6 @@ const AdminProducts = () => {
         description: `${currentProduct.name} has been updated successfully.`
       });
     } else {
-      // Add new product
       const newProduct = {
         ...currentProduct,
         id: Math.max(...products.map(p => p.id)) + 1
@@ -326,14 +335,26 @@ const AdminProducts = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="image">Image URL</Label>
-              <Input
-                id="image"
-                name="image"
-                value={currentProduct.image}
-                onChange={handleInputChange}
-                placeholder="URL to product image"
-              />
+              <Label htmlFor="image">Product Image</Label>
+              <div className="flex gap-4 items-center">
+                <Input
+                  id="image"
+                  name="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="flex-1"
+                />
+                {currentProduct.image && (
+                  <div className="w-20 h-20 rounded border overflow-hidden">
+                    <img 
+                      src={currentProduct.image} 
+                      alt="Product preview" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           
