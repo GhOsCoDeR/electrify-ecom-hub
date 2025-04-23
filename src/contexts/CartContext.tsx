@@ -25,57 +25,82 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   
   // Load cart from localStorage on initial render
   useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      try {
-        setCartItems(JSON.parse(savedCart));
-      } catch (error) {
-        console.error("Failed to parse cart from localStorage:", error);
-        localStorage.removeItem('cart');
+    try {
+      const savedCart = localStorage.getItem('cart');
+      if (savedCart) {
+        const parsedCart = JSON.parse(savedCart);
+        if (Array.isArray(parsedCart)) {
+          setCartItems(parsedCart);
+          console.log("Cart loaded from localStorage:", parsedCart);
+        } else {
+          console.error("Cart data is not an array:", parsedCart);
+          localStorage.removeItem('cart');
+        }
       }
+    } catch (error) {
+      console.error("Failed to parse cart from localStorage:", error);
+      localStorage.removeItem('cart');
     }
   }, []);
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cartItems));
+    if (cartItems.length > 0) {
+      console.log("Saving cart to localStorage:", cartItems);
+      localStorage.setItem('cart', JSON.stringify(cartItems));
+    } else {
+      localStorage.removeItem('cart');
+    }
   }, [cartItems]);
 
   const addToCart = (item: CartItem) => {
     setCartItems(prevItems => {
       const existingItem = prevItems.find(i => i.id === item.id);
       if (existingItem) {
-        return prevItems.map(i => 
+        const updatedItems = prevItems.map(i => 
           i.id === item.id 
             ? { ...i, quantity: i.quantity + item.quantity } 
             : i
         );
+        console.log("Updated cart after adding:", updatedItems);
+        return updatedItems;
       }
-      return [...prevItems, item];
+      const newItems = [...prevItems, item];
+      console.log("Updated cart after adding new item:", newItems);
+      return newItems;
     });
   };
 
   const removeFromCart = (id: number) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== id));
+    setCartItems(prevItems => {
+      const updatedItems = prevItems.filter(item => item.id !== id);
+      console.log("Updated cart after removing item:", updatedItems);
+      return updatedItems;
+    });
   };
 
   const updateQuantity = (id: number, quantity: number) => {
     if (quantity < 1) return;
     
-    setCartItems(prevItems => 
-      prevItems.map(item => 
+    setCartItems(prevItems => {
+      const updatedItems = prevItems.map(item => 
         item.id === id ? { ...item, quantity } : item
-      )
-    );
+      );
+      console.log("Updated cart after changing quantity:", updatedItems);
+      return updatedItems;
+    });
   };
 
   const clearCart = () => {
+    console.log("Clearing cart");
     setCartItems([]);
     localStorage.removeItem('cart');
   };
 
   const getCartCount = () => {
-    return cartItems.reduce((total, item) => total + item.quantity, 0);
+    const count = cartItems.reduce((total, item) => total + item.quantity, 0);
+    console.log("Current cart count:", count);
+    return count;
   };
 
   return (

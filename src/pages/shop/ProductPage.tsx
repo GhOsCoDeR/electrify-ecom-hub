@@ -5,10 +5,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Star, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
 
 const ProductPage = () => {
   const { id } = useParams();
   const [quantity, setQuantity] = useState(1);
+  const { addToCart } = useCart();
+  const { toast } = useToast();
   
   // Mock product data - in a real app, this would come from an API
   const product = {
@@ -40,9 +44,21 @@ const ProductPage = () => {
     }
   };
 
-  const addToCart = () => {
-    console.log(`Added ${quantity} of ${product.name} to cart`);
-    // In a real app, this would update a cart state or call an API
+  const handleAddToCart = () => {
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: quantity,
+      image: product.image
+    };
+    
+    addToCart(cartItem);
+    
+    toast({
+      title: "Added to cart",
+      description: `${product.name} has been added to your cart.`,
+    });
   };
 
   return (
@@ -114,7 +130,7 @@ const ProductPage = () => {
                 </button>
               </div>
               
-              <Button onClick={addToCart} className="bg-electric-blue text-white hover:bg-blue-700 flex items-center">
+              <Button onClick={handleAddToCart} className="bg-electric-blue text-white hover:bg-blue-700 flex items-center">
                 <ShoppingCart size={16} className="mr-2" />
                 Add to Cart
               </Button>
