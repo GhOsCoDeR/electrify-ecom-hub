@@ -1,259 +1,238 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import WebsiteLayout from "@/components/layout/WebsiteLayout";
 import { 
+  Wrench, 
+  ShieldCheck, 
   Lightbulb, 
-  Home, 
-  Shield, 
-  Settings, 
-  Tool, 
-  Zap, 
   Cpu, 
-  WifiIcon, 
+  HomeIcon, 
+  Zap, 
+  CheckCircle, 
   Phone 
 } from "lucide-react";
 
-const services = [
-  {
-    id: 1,
-    icon: <Lightbulb size={40} className="text-electric-blue" />,
-    title: "Lighting Installation",
-    description: "Professional installation of all lighting fixtures for residential and commercial properties. We handle everything from simple fixtures to complex lighting systems.",
-    features: [
-      "Fixture installation and replacement",
-      "Recessed lighting installation",
-      "Outdoor and landscape lighting",
-      "LED upgrades and retrofitting",
-      "Smart lighting solutions"
-    ]
-  },
-  {
-    id: 2,
-    icon: <Home size={40} className="text-electric-blue" />,
-    title: "Home Appliance Repair",
-    description: "Expert repair services for all major household appliances. Our technicians are trained to diagnose and fix a wide range of issues with your appliances.",
-    features: [
-      "Refrigerator and freezer repair",
-      "Washing machine and dryer service",
-      "Dishwasher troubleshooting",
-      "Oven and range repair",
-      "Small appliance fixes"
-    ]
-  },
-  {
-    id: 3,
-    icon: <Shield size={40} className="text-electric-blue" />,
-    title: "Electrical Safety Inspections",
-    description: "Comprehensive safety checks to ensure your electrical systems are up to code and operating safely. Identify potential hazards before they cause problems.",
-    features: [
-      "Electrical panel inspections",
-      "Outlet and switch testing",
-      "GFCI and AFCI verification",
-      "Wiring assessments",
-      "Safety certification"
-    ]
-  },
-  {
-    id: 4,
-    icon: <Settings size={40} className="text-electric-blue" />,
-    title: "System Maintenance",
-    description: "Regular maintenance services to keep your electrical systems running smoothly. Prevent costly repairs with scheduled maintenance visits.",
-    features: [
-      "Preventative maintenance plans",
-      "System cleaning and optimization",
-      "Component testing and replacement",
-      "Performance evaluation",
-      "Documentation and reporting"
-    ]
-  },
-  {
-    id: 5,
-    icon: <Tool size={40} className="text-electric-blue" />,
-    title: "Electrical Panel Upgrades",
-    description: "Modernize your electrical service panel to handle today's power demands. Ensure your system can safely support all your electrical needs.",
-    features: [
-      "Panel replacement",
-      "Circuit breaker updates",
-      "Amperage upgrades",
-      "Code compliance updates",
-      "Surge protection installation"
-    ]
-  },
-  {
-    id: 6,
-    icon: <Zap size={40} className="text-electric-blue" />,
-    title: "Power Backup Solutions",
-    description: "Install and maintain backup power systems to keep your essential services running during outages. Peace of mind when you need it most.",
-    features: [
-      "Generator installation",
-      "Battery backup systems",
-      "UPS solutions",
-      "Transfer switch setup",
-      "Emergency power planning"
-    ]
-  },
-  {
-    id: 7,
-    icon: <Cpu size={40} className="text-electric-blue" />,
-    title: "Smart Home Integration",
-    description: "Transform your home with integrated smart technology. Control lighting, appliances, security, and more from your smartphone or voice commands.",
-    features: [
-      "Smart hub installation",
-      "Device integration",
-      "Voice control setup",
-      "Automation programming",
-      "User training and support"
-    ]
-  },
-  {
-    id: 8,
-    icon: <WifiIcon size={40} className="text-electric-blue" />,
-    title: "Network Installation",
-    description: "Professional installation and optimization of home and business networks. Ensure fast, reliable connections throughout your property.",
-    features: [
-      "WiFi network setup",
-      "Wired network installation",
-      "Network security",
-      "Coverage optimization",
-      "Equipment recommendations"
-    ]
-  },
-];
-
 const ServicesPage = () => {
+  // Service categories
+  const services = [
+    {
+      id: 1,
+      icon: <Wrench size={36} className="text-electric-blue" />,
+      title: "Installation Services",
+      description: "Professional installation of electrical systems, appliances, and fixtures by certified technicians.",
+      features: [
+        "Appliance installation and setup",
+        "Lighting system installation",
+        "Smart home device integration",
+        "Electrical wiring and panel installation"
+      ]
+    },
+    {
+      id: 2,
+      icon: <ShieldCheck size={36} className="text-electric-blue" />,
+      title: "Maintenance & Repair",
+      description: "Comprehensive maintenance and repair services to keep your electrical systems running smoothly.",
+      features: [
+        "Regular system checkups",
+        "Emergency repair services",
+        "Appliance troubleshooting",
+        "Performance optimization"
+      ]
+    },
+    {
+      id: 3,
+      icon: <Lightbulb size={36} className="text-electric-blue" />,
+      title: "Lighting Solutions",
+      description: "Design and implementation of energy-efficient lighting solutions for residential and commercial spaces.",
+      features: [
+        "Energy audit and consultation",
+        "LED lighting upgrades",
+        "Decorative lighting design",
+        "Smart lighting systems"
+      ]
+    },
+    {
+      id: 4,
+      icon: <Cpu size={36} className="text-electric-blue" />,
+      title: "Smart Home Integration",
+      description: "Transform your home with integrated smart technology for convenience, efficiency, and security.",
+      features: [
+        "Smart device consultation and planning",
+        "Voice assistant integration",
+        "Home automation system setup",
+        "Remote control configuration"
+      ]
+    },
+    {
+      id: 5,
+      icon: <HomeIcon size={36} className="text-electric-blue" />,
+      title: "Home Energy Audits",
+      description: "Comprehensive assessment of your home's energy usage with recommendations for improvements and savings.",
+      features: [
+        "Complete energy efficiency evaluation",
+        "Utility bill analysis",
+        "Insulation and air leakage testing",
+        "Customized energy-saving recommendations"
+      ]
+    },
+    {
+      id: 6,
+      icon: <Zap size={36} className="text-electric-blue" />,
+      title: "Commercial Services",
+      description: "Specialized electrical services for businesses, offices, retail spaces, and industrial facilities.",
+      features: [
+        "Commercial electrical system design",
+        "Office equipment installation",
+        "Industrial electrical maintenance",
+        "Energy efficiency for businesses"
+      ]
+    }
+  ];
+
   return (
     <WebsiteLayout>
       {/* Hero Section */}
-      <section className="bg-electric-blue text-white py-20">
+      <section className="bg-gradient-to-r from-electric-darkgray to-gray-800 text-white py-20">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Our Services</h1>
-          <p className="text-xl max-w-3xl mx-auto opacity-90">
-            Professional electrical services delivered by certified technicians. From installation to repair, we've got you covered.
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">Our Professional Services</h1>
+          <p className="text-xl mb-8 max-w-3xl mx-auto">
+            From installation to maintenance, we provide comprehensive electrical services
+            delivered by certified professionals with a commitment to quality and safety.
           </p>
+          <Link to="/contact">
+            <Button className="btn-electric-primary px-8 py-6 text-lg">
+              Schedule a Service
+            </Button>
+          </Link>
         </div>
       </section>
 
-      {/* Services Introduction */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row gap-12 items-center">
-            <div className="md:w-1/2">
-              <h2 className="text-3xl font-bold mb-6">Expert Electrical Services</h2>
-              <p className="text-gray-700 mb-4">
-                At ElectriCo, we offer comprehensive electrical services for residential and commercial properties. Our team of licensed electricians brings years of experience and expertise to every job.
-              </p>
-              <p className="text-gray-700 mb-6">
-                Whether you need a simple repair, a complete installation, or ongoing maintenance, we deliver quality workmanship and exceptional customer service.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/contact">
-                  <Button className="btn-electric-primary">Get a Quote</Button>
-                </Link>
-                <a href="tel:+15551234567">
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Phone size={16} /> Call Us Now
-                  </Button>
-                </a>
-              </div>
-            </div>
-            <div className="md:w-1/2">
-              <img 
-                src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?q=80&w=1469&auto=format&fit=crop" 
-                alt="ElectriCo Services" 
-                className="rounded-lg shadow-lg w-full h-auto"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Services Grid */}
-      <section className="py-16 bg-electric-lightgray">
+      {/* Services Section */}
+      <section className="py-20">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Our Service Offerings</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {services.map((service) => (
-              <Card key={service.id} className="h-full">
-                <CardContent className="p-6">
-                  <div className="mb-4">{service.icon}</div>
-                  <h3 className="text-2xl font-semibold mb-3">{service.title}</h3>
-                  <p className="text-gray-600 mb-4">{service.description}</p>
-                  
-                  <h4 className="font-semibold text-lg mb-2">What's Included:</h4>
-                  <ul className="list-disc pl-5 space-y-1 mb-6">
+            {services.map(service => (
+              <div key={service.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                <div className="p-8">
+                  <div className="flex justify-center mb-6">
+                    <div className="bg-electric-blue/10 w-20 h-20 flex items-center justify-center rounded-full">
+                      {service.icon}
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold mb-4 text-center">{service.title}</h3>
+                  <p className="text-gray-600 mb-6 text-center">
+                    {service.description}
+                  </p>
+                  <div className="space-y-2">
                     {service.features.map((feature, index) => (
-                      <li key={index} className="text-gray-600">{feature}</li>
+                      <div key={index} className="flex items-start">
+                        <CheckCircle size={18} className="text-electric-blue mr-2 mt-1 flex-shrink-0" />
+                        <span className="text-gray-700">{feature}</span>
+                      </div>
                     ))}
-                  </ul>
-                  
+                  </div>
+                </div>
+                <div className="border-t p-4 bg-gray-50">
                   <Link to="/contact">
-                    <Button className="w-full btn-electric-primary">Request Service</Button>
+                    <Button className="btn-electric-secondary w-full">Request Service</Button>
                   </Link>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Process Section */}
-      <section className="py-16">
+      <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-6">Our Service Process</h2>
-          <p className="text-center text-gray-600 max-w-2xl mx-auto mb-12">
-            We follow a systematic approach to ensure efficient and effective service delivery for all your electrical needs.
+          <p className="text-xl text-center text-gray-600 mb-12 max-w-3xl mx-auto">
+            We follow a systematic approach to ensure high-quality service delivery and customer satisfaction.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-electric-blue text-white text-2xl font-bold flex items-center justify-center mx-auto mb-4">1</div>
-              <h3 className="text-xl font-semibold mb-2">Consultation</h3>
-              <p className="text-gray-600">Discuss your needs and requirements with our experts.</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-electric-blue text-white text-2xl font-bold flex items-center justify-center mx-auto mb-4">2</div>
-              <h3 className="text-xl font-semibold mb-2">Assessment</h3>
-              <p className="text-gray-600">Our technicians evaluate your electrical systems and needs.</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-electric-blue text-white text-2xl font-bold flex items-center justify-center mx-auto mb-4">3</div>
-              <h3 className="text-xl font-semibold mb-2">Implementation</h3>
-              <p className="text-gray-600">Our certified experts perform the required service.</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-electric-blue text-white text-2xl font-bold flex items-center justify-center mx-auto mb-4">4</div>
-              <h3 className="text-xl font-semibold mb-2">Follow-up</h3>
-              <p className="text-gray-600">We ensure your complete satisfaction with our work.</p>
-            </div>
+            {[
+              { number: "01", title: "Consultation", desc: "We discuss your needs and assess the requirements" },
+              { number: "02", title: "Quote", desc: "We provide a detailed and transparent service quote" },
+              { number: "03", title: "Scheduling", desc: "We arrange a convenient time to perform the service" },
+              { number: "04", title: "Execution", desc: "Our professionals complete the work with quality and care" }
+            ].map((step, index) => (
+              <div key={index} className="relative">
+                <div className="bg-white rounded-lg shadow-md p-6 text-center h-full hover:shadow-lg transition-shadow duration-300">
+                  <div className="bg-electric-blue text-white text-xl font-bold w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
+                    {step.number}
+                  </div>
+                  <h3 className="text-xl font-bold mb-3">{step.title}</h3>
+                  <p className="text-gray-600">{step.desc}</p>
+                </div>
+                {index < 3 && (
+                  <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2">
+                    <span className="text-4xl text-electric-blue">→</span>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>
-      
-      {/* CTA Section */}
-      <section className="bg-electric-blue py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Ready to Get Started?</h2>
-          <p className="text-white text-opacity-90 max-w-2xl mx-auto mb-8">
-            Contact us today to schedule a service appointment or to request a quote for your electrical project.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/contact">
-              <Button className="bg-white text-electric-blue hover:bg-gray-100 font-medium px-6 py-3 h-auto">
-                Contact Us
-              </Button>
-            </Link>
-            <a href="tel:+15551234567">
-              <Button variant="outline" className="border-white text-white hover:bg-white/10 font-medium px-6 py-3 h-auto flex items-center gap-2">
-                <Phone size={16} /> (555) 123-4567
-              </Button>
-            </a>
+
+      {/* Testimonials */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">What Our Clients Say</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                quote: "The team at ElectriCo provided exceptional service when installing our home lighting system. Professional, punctual, and thorough!",
+                name: "Sarah Johnson",
+                title: "Homeowner"
+              },
+              {
+                quote: "We contracted ElectriCo for our office's electrical maintenance. Their team was knowledgeable and efficient, causing minimal disruption to our operations.",
+                name: "Michael Chen",
+                title: "Office Manager"
+              },
+              {
+                quote: "The smart home integration service exceeded my expectations. Now I can control everything from my phone, and the system works flawlessly.",
+                name: "Daniel Rodriguez",
+                title: "Tech Enthusiast"
+              }
+            ].map((testimonial, index) => (
+              <div key={index} className="bg-white rounded-lg shadow-md p-8 relative">
+                <div className="text-5xl font-serif text-electric-blue/20 absolute top-4 left-4">"</div>
+                <div className="relative z-10">
+                  <p className="text-gray-700 mb-6 italic">
+                    "{testimonial.quote}"
+                  </p>
+                  <div>
+                    <p className="font-bold">{testimonial.name}</p>
+                    <p className="text-gray-500 text-sm">{testimonial.title}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
+        </div>
+      </section>
+
+      {/* Call to Action */}
+      <section className="py-16 bg-electric-blue text-white">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
+          <p className="text-xl mb-8 max-w-2xl mx-auto">
+            Contact our service team today to schedule a consultation or service appointment.
+          </p>
+          <Link to="/contact">
+            <Button className="bg-white text-electric-blue hover:bg-gray-100 px-8 py-6 text-lg flex items-center mx-auto">
+              <Phone size={20} className="mr-2" />
+              Contact Us Now
+            </Button>
+          </Link>
         </div>
       </section>
     </WebsiteLayout>
