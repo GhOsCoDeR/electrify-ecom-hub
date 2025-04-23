@@ -1,5 +1,6 @@
 
-import { useLocation, useNavigate, Link, useEffect } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useEffect } from "react"; // Corrected import for useEffect
 import WebsiteLayout from "@/components/layout/WebsiteLayout";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
