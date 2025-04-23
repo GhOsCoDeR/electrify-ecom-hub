@@ -1,9 +1,7 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import WebsiteLayout from "@/components/layout/WebsiteLayout";
 import { 
-  Lightning, 
   Zap, 
   Award, 
   Users, 
@@ -37,7 +35,7 @@ const HomePage = () => {
             <div className="md:w-1/2 flex justify-center">
               <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 shadow-2xl">
                 <div className="w-72 h-72 bg-electric-blue rounded-full flex items-center justify-center">
-                  <Lightning size={100} className="text-white" />
+                  <Zap size={100} className="text-white" />
                 </div>
               </div>
             </div>
