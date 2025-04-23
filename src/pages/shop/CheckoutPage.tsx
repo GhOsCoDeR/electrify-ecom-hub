@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -11,8 +10,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Landmark, Truck } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-// Form validation schema
 const checkoutSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -29,6 +28,7 @@ type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 
 const CheckoutPage = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const {
@@ -42,7 +42,6 @@ const CheckoutPage = () => {
     },
   });
 
-  // Mock order summary data
   const orderSummary = {
     items: [
       { id: 1, name: "Premium Electric Mixer", quantity: 1, price: 249.99 },
@@ -57,25 +56,17 @@ const CheckoutPage = () => {
   const onSubmit = async (data: CheckoutFormValues) => {
     setIsSubmitting(true);
     
-    // Simulate API request
     try {
-      // In a real app, we would send the order data to an API
-      console.log("Form data:", data);
-      console.log("Order data:", orderSummary);
-      
-      // Simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast({
-        title: "Order placed successfully!",
-        description: "Thank you for your purchase. You will receive a confirmation email shortly.",
+      navigate('/order-review', {
+        state: {
+          formData: data,
+          orderData: orderSummary
+        }
       });
-      
-      // In a real app, we would redirect to a success page or clear the cart
     } catch (error) {
       toast({
-        title: "Error placing order",
-        description: "There was an error processing your order. Please try again.",
+        title: "Error processing checkout",
+        description: "There was an error processing your checkout. Please try again.",
         variant: "destructive",
       });
     } finally {

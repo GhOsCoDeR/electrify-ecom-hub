@@ -15,6 +15,8 @@ import ShopPage from "./pages/shop/ShopPage";
 import ProductPage from "./pages/shop/ProductPage";
 import CartPage from "./pages/shop/CartPage";
 import CheckoutPage from "./pages/shop/CheckoutPage";
+import OrderReviewPage from "./pages/shop/OrderReviewPage";
+import OrderSuccessPage from "./pages/shop/OrderSuccessPage";
 import AccountPage from "./pages/shop/AccountPage";
 
 // Auth pages
@@ -50,6 +52,8 @@ const App = () => (
           <Route path="/shop/product/:id" element={<ProductPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/order-review" element={<OrderReviewPage />} />
+          <Route path="/order-success" element={<OrderSuccessPage />} />
           <Route path="/account" element={<AccountPage />} />
           
           {/* Auth Routes */}
