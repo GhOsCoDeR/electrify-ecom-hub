@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Eye } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { ProductType } from "@/types/product";
+import { useCart } from "@/contexts/CartContext";
 
 interface ProductCardProps {
   product: ProductType;
@@ -14,10 +15,21 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, viewMode }: ProductCardProps) => {
   const { toast } = useToast();
+  const { addToCart } = useCart();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      image: product.image
+    };
+    
+    addToCart(cartItem);
     
     toast({
       title: "Added to cart",
@@ -32,7 +44,7 @@ const ProductCard = ({ product, viewMode }: ProductCardProps) => {
         <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
           <div className="relative h-56 overflow-hidden">
             <img 
-              src={product.image} 
+              src={product.image || "/placeholder.svg"} 
               alt={product.name} 
               className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" 
             />
@@ -79,7 +91,7 @@ const ProductCard = ({ product, viewMode }: ProductCardProps) => {
         <div className="flex flex-col md:flex-row">
           <div className="relative md:w-1/4 h-56 md:h-auto overflow-hidden">
             <img 
-              src={product.image} 
+              src={product.image || "/placeholder.svg"} 
               alt={product.name} 
               className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" 
             />

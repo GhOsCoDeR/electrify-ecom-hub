@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ShoppingCart, User } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
@@ -8,9 +8,24 @@ import { useCart } from "@/contexts/CartContext";
 const WebsiteNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { getCartCount } = useCart();
+  const location = useLocation();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
+  };
+
+  // Function to check if a link is active
+  const isActive = (path: string) => {
+    if (path === '/' && location.pathname === '/') return true;
+    if (path !== '/' && location.pathname.startsWith(path)) return true;
+    return false;
+  };
+
+  // Style for active and inactive links
+  const getLinkStyle = (path: string) => {
+    return isActive(path) 
+      ? "text-electric-blue font-medium border-b-2 border-electric-blue" 
+      : "text-electric-darkgray hover:text-electric-blue transition-colors duration-300";
   };
 
   return (
@@ -27,18 +42,16 @@ const WebsiteNavbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-8">
-            <Link to="/" className="text-electric-darkgray hover:text-electric-blue transition-colors duration-300">Home</Link>
-            <Link to="/about" className="text-electric-darkgray hover:text-electric-blue transition-colors duration-300">About</Link>
-            <Link to="/services" className="text-electric-darkgray hover:text-electric-blue transition-colors duration-300">Services</Link>
-            <Link to="/contact" className="text-electric-darkgray hover:text-electric-blue transition-colors duration-300">Contact</Link>
+            <Link to="/" className={getLinkStyle("/")}>Home</Link>
+            <Link to="/about" className={getLinkStyle("/about")}>About</Link>
+            <Link to="/services" className={getLinkStyle("/services")}>Services</Link>
+            <Link to="/contact" className={getLinkStyle("/contact")}>Contact</Link>
+            <Link to="/shop" className={getLinkStyle("/shop")}>Shop</Link>
           </div>
 
           {/* Action Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/shop">
-              <Button className="btn-electric-primary">Shop Now</Button>
-            </Link>
-            <Link to="/cart" className="text-electric-darkgray hover:text-electric-blue relative">
+            <Link to="/cart" className={`${isActive('/cart') ? 'text-electric-blue' : 'text-electric-darkgray hover:text-electric-blue'} relative`}>
               <ShoppingCart size={24} />
               {getCartCount() > 0 && (
                 <div className="absolute -top-2 -right-2 bg-electric-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
@@ -46,7 +59,7 @@ const WebsiteNavbar = () => {
                 </div>
               )}
             </Link>
-            <Link to="/login" className="text-electric-darkgray hover:text-electric-blue">
+            <Link to="/login" className={isActive('/login') ? 'text-electric-blue' : 'text-electric-darkgray hover:text-electric-blue'}>
               <User size={24} />
             </Link>
           </div>
@@ -70,38 +83,44 @@ const WebsiteNavbar = () => {
             <div className="flex flex-col space-y-3">
               <Link 
                 to="/" 
-                className="text-electric-darkgray hover:text-electric-blue py-2" 
+                className={`py-2 ${getLinkStyle("/")}`}
                 onClick={toggleMenu}
               >
                 Home
               </Link>
               <Link 
                 to="/about" 
-                className="text-electric-darkgray hover:text-electric-blue py-2" 
+                className={`py-2 ${getLinkStyle("/about")}`}
                 onClick={toggleMenu}
               >
                 About
               </Link>
               <Link 
                 to="/services" 
-                className="text-electric-darkgray hover:text-electric-blue py-2" 
+                className={`py-2 ${getLinkStyle("/services")}`}
                 onClick={toggleMenu}
               >
                 Services
               </Link>
               <Link 
                 to="/contact" 
-                className="text-electric-darkgray hover:text-electric-blue py-2" 
+                className={`py-2 ${getLinkStyle("/contact")}`}
                 onClick={toggleMenu}
               >
                 Contact
               </Link>
+              <Link 
+                to="/shop" 
+                className={`py-2 ${getLinkStyle("/shop")}`}
+                onClick={toggleMenu}
+              >
+                Shop
+              </Link>
               <div className="flex items-center justify-between py-2">
-                <Link to="/shop" onClick={toggleMenu}>
-                  <Button className="btn-electric-primary">Shop Now</Button>
-                </Link>
                 <div className="flex space-x-4">
-                  <Link to="/cart" className="text-electric-darkgray hover:text-electric-blue relative" onClick={toggleMenu}>
+                  <Link to="/cart" 
+                    className={`${isActive('/cart') ? 'text-electric-blue' : 'text-electric-darkgray hover:text-electric-blue'} relative`}
+                    onClick={toggleMenu}>
                     <ShoppingCart size={24} />
                     {getCartCount() > 0 && (
                       <div className="absolute -top-2 -right-2 bg-electric-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
@@ -109,7 +128,9 @@ const WebsiteNavbar = () => {
                       </div>
                     )}
                   </Link>
-                  <Link to="/login" className="text-electric-darkgray hover:text-electric-blue" onClick={toggleMenu}>
+                  <Link to="/login" 
+                    className={isActive('/login') ? 'text-electric-blue' : 'text-electric-darkgray hover:text-electric-blue'}
+                    onClick={toggleMenu}>
                     <User size={24} />
                   </Link>
                 </div>
