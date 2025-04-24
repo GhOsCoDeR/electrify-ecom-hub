@@ -1,38 +1,54 @@
-
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import ShopLayout from "@/components/layout/ShopLayout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Star, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ShoppingCart, Star, ArrowLeft, Loader2 } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
+import { getProductById } from "@/lib/database";
+
+type Product = {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category: string;
+  brand: string;
+  in_stock: boolean;
+  rating?: number;
+  product_specifications?: Array<{
+    id: number;
+    name: string;
+    value: string;
+  }>;
+};
 
 const ProductPage = () => {
   const { id } = useParams();
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  // Mock product data - in a real app, this would come from an API
-  const product = {
-    id: Number(id),
-    name: "Premium Electric Mixer",
-    description: "High-quality electric mixer with multiple speed settings and attachments. Perfect for all your kitchen needs. Energy-efficient design with a powerful motor that can handle even the toughest mixing tasks.",
-    price: 249.99,
-    image: "/placeholder.svg",
-    category: "kitchen-appliances",
-    rating: 4.8,
-    brand: "ElectriCo",
-    inStock: true,
-    specifications: [
-      { name: "Power", value: "800W" },
-      { name: "Voltage", value: "220-240V" },
-      { name: "Speed Settings", value: "10" },
-      { name: "Warranty", value: "2 Years" },
-      { name: "Weight", value: "5.2kg" }
-    ]
-  };
+  useEffect(() => {
+    const fetchProduct = async () => {
+      setIsLoading(true);
+      try {
+        const productData = await getProductById(Number(id));
+        setProduct(productData);
+      } catch (err) {
+        console.error('Error fetching product:', err);
+        setError('Failed to load product. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchProduct();
+  }, [id]);
 
   const incrementQuantity = () => {
     setQuantity(quantity + 1);
@@ -45,12 +61,14 @@ const ProductPage = () => {
   };
 
   const handleAddToCart = () => {
+    if (!product) return;
+    
     const cartItem = {
       id: product.id,
       name: product.name,
       price: product.price,
       quantity: quantity,
-      image: product.image
+      image: product.image || '/placeholder.svg'
     };
     
     addToCart(cartItem);
@@ -60,6 +78,32 @@ const ProductPage = () => {
       description: `${product.name} has been added to your cart.`,
     });
   };
+
+  if (isLoading) {
+    return (
+      <ShopLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <Loader2 className="h-8 w-8 animate-spin text-electric-blue" />
+        </div>
+      </ShopLayout>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <ShopLayout>
+        <div className="bg-white rounded-lg shadow-md p-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-red-600 mb-4">Error</h2>
+            <p className="mb-4">{error || 'Product not found'}</p>
+            <Link to="/shop" className="text-electric-blue hover:underline">
+              Return to Shop
+            </Link>
+          </div>
+        </div>
+      </ShopLayout>
+    );
+  }
 
   return (
     <ShopLayout>
@@ -75,7 +119,7 @@ const ProductPage = () => {
           {/* Product Image */}
           <div className="bg-gray-100 rounded-lg flex items-center justify-center p-8">
             <img 
-              src={product.image} 
+              src={product.image || '/placeholder.svg'} 
               alt={product.name}
               className="max-h-80 object-contain"
             />
@@ -85,19 +129,21 @@ const ProductPage = () => {
           <div>
             <h1 className="text-3xl font-bold text-electric-darkgray mb-2">{product.name}</h1>
             
-            <div className="flex items-center mb-4">
-              <div className="flex text-yellow-400 mr-2">
-                {[...Array(5)].map((_, i) => (
-                  <Star 
-                    key={i} 
-                    size={16} 
-                    fill={i < Math.floor(product.rating) ? "currentColor" : "none"} 
-                    className={i < Math.floor(product.rating) ? "text-yellow-400" : "text-gray-300"}
-                  />
-                ))}
+            {product.rating && (
+              <div className="flex items-center mb-4">
+                <div className="flex text-yellow-400 mr-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Star 
+                      key={i} 
+                      size={16} 
+                      fill={i < Math.floor(product.rating || 0) ? "currentColor" : "none"} 
+                      className={i < Math.floor(product.rating || 0) ? "text-yellow-400" : "text-gray-300"}
+                    />
+                  ))}
+                </div>
+                <span className="text-gray-600">{product.rating} ({Math.floor((product.rating || 0) * 10)} reviews)</span>
               </div>
-              <span className="text-gray-600">{product.rating} ({Math.floor(product.rating * 10)} reviews)</span>
-            </div>
+            )}
             
             <div className="text-2xl font-bold text-electric-blue mb-4">${product.price}</div>
             
@@ -107,8 +153,8 @@ const ProductPage = () => {
               <p className="font-semibold mb-2">Brand: <span className="font-normal">{product.brand}</span></p>
               <p className="font-semibold mb-2">
                 Availability: 
-                <span className={`font-normal ${product.inStock ? 'text-green-600' : 'text-red-600'}`}>
-                  {product.inStock ? ' In Stock' : ' Out of Stock'}
+                <span className={`font-normal ${product.in_stock ? 'text-green-600' : 'text-red-600'}`}>
+                  {product.in_stock ? ' In Stock' : ' Out of Stock'}
                 </span>
               </p>
             </div>
@@ -130,26 +176,32 @@ const ProductPage = () => {
                 </button>
               </div>
               
-              <Button onClick={handleAddToCart} className="bg-electric-blue text-white hover:bg-blue-700 flex items-center">
+              <Button 
+                onClick={handleAddToCart} 
+                className="bg-electric-blue text-white hover:bg-blue-700 flex items-center"
+                disabled={!product.in_stock}
+              >
                 <ShoppingCart size={16} className="mr-2" />
-                Add to Cart
+                {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
               </Button>
             </div>
           </div>
         </div>
         
         {/* Specifications */}
-        <div className="border-t border-gray-200 p-6">
-          <h2 className="text-xl font-bold mb-4">Specifications</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {product.specifications.map((spec, index) => (
-              <div key={index} className="flex">
-                <span className="font-medium w-1/3">{spec.name}:</span>
-                <span className="text-gray-600">{spec.value}</span>
-              </div>
-            ))}
+        {product.product_specifications && product.product_specifications.length > 0 && (
+          <div className="border-t border-gray-200 p-6">
+            <h2 className="text-xl font-bold mb-4">Specifications</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {product.product_specifications.map((spec) => (
+                <div key={spec.id} className="flex">
+                  <span className="font-medium w-1/3">{spec.name}:</span>
+                  <span className="text-gray-600">{spec.value}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </ShopLayout>
   );

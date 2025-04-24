@@ -1,15 +1,18 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import WebsiteLayout from "@/components/layout/WebsiteLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import { createUserProfile } from "@/lib/auth";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Form validation schema
 const registerSchema = z.object({
@@ -30,11 +33,17 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const RegisterPage = () => {
   const { toast } = useToast();
+  const { signUp } = useAuth();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [termsChecked, setTermsChecked] = useState(false);
+  const [emailConfirmationSent, setEmailConfirmationSent] = useState(false);
   
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -43,24 +52,108 @@ const RegisterPage = () => {
     },
   });
 
+  const handleTermsChange = (checked: boolean) => {
+    setTermsChecked(checked);
+    setValue('terms', checked);
+  };
+
   const onSubmit = async (data: RegisterFormValues) => {
-    setIsSubmitting(true);
-    
-    // Simulate API request
-    try {
-      // In a real app, we would send the registration data to an API
-      console.log("Registration data:", data);
-      
-      // Simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+    if (emailConfirmationSent) {
       toast({
-        title: "Registration successful!",
-        description: "Your account has been created. You can now log in.",
+        title: "Confirmation email already sent",
+        description: "Please check your email to confirm your account.",
       });
+      navigate("/login");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    
+    try {
+      console.log("Starting registration process for:", data.email);
       
-      // In a real app, we would redirect to the login page or automatically login the user
-    } catch (error) {
+      // Register the user with Supabase Auth
+      const userData = await signUp(data.email, data.password);
+      console.log("Signup response:", userData);
+      
+      if (!userData) {
+        console.error("No response data from signUp");
+        throw new Error("Failed to create user account");
+      }
+      
+      if (!userData.user) {
+        console.error("No user data returned from signUp");
+        throw new Error("Failed to create user account");
+      }
+      
+      // User exists but identities array is empty - this means the email is already registered
+      if (userData.user.identities && userData.user.identities.length === 0) {
+        setErrorMessage("This email is already registered. Please try logging in instead.");
+        return;
+      }
+      
+      // Email confirmation is required - Supabase returns user but no session in this case
+      if (userData.user && !userData.session) {
+        setEmailConfirmationSent(true);
+        toast({
+          title: "Registration successful!",
+          description: "Please check your email to confirm your account.",
+        });
+        navigate("/login");
+        return;
+      }
+      
+      // If we have a session, we can create the user profile now
+      if (userData.user && userData.session) {
+        try {
+          // Create the user profile in the database
+          const profile = await createUserProfile(userData.user.id, {
+            email: data.email,
+            first_name: data.firstName,
+            last_name: data.lastName
+          });
+          
+          console.log("User profile created:", profile);
+          
+          toast({
+            title: "Registration successful!",
+            description: "Your account has been created.",
+          });
+          
+          // Redirect to the account page or homepage
+          navigate("/account");
+        } catch (profileError: any) {
+          console.error("Error creating user profile:", profileError);
+          // If profile creation fails but account was created, still consider it a success
+          toast({
+            title: "Registration successful!",
+            description: "Your account has been created but profile setup encountered an issue. You can update your profile later.",
+          });
+          navigate("/login");
+        }
+      } else {
+        // This should not happen if the previous checks are working correctly
+        toast({
+          title: "Registration successful!",
+          description: "Your account has been created.",
+        });
+        navigate("/login");
+      }
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      
+      // Handle specific error messages
+      if (error.message?.includes("Email already registered")) {
+        setErrorMessage("This email is already registered. Please try logging in instead.");
+      } else if (error.message?.includes("Password should be at least 6 characters")) {
+        setErrorMessage("Password should be at least 6 characters.");
+      } else if (error.message?.includes("duplicate key value violates unique constraint")) {
+        setErrorMessage("This email is already registered. Please try logging in instead.");
+      } else {
+        setErrorMessage(error.message || "There was an error creating your account. Please try again.");
+      }
+      
       toast({
         title: "Registration failed",
         description: "There was an error creating your account. Please try again.",
@@ -83,133 +176,162 @@ const RegisterPage = () => {
           
           <h1 className="text-3xl font-bold text-center mb-8">Create an Account</h1>
           
-          <div className="bg-white rounded-lg shadow-md p-8">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+          {emailConfirmationSent ? (
+            <div className="bg-white rounded-lg shadow-md p-8">
+              <Alert className="mb-6 bg-green-50 text-green-800 border-green-200">
+                <AlertDescription className="font-medium">
+                  Please check your email to confirm your account. You will receive an email with a confirmation link.
+                </AlertDescription>
+              </Alert>
+              <Button
+                onClick={() => navigate("/login")}
+                className="w-full bg-electric-blue text-white hover:bg-blue-700"
+              >
+                Go to Login Page
+              </Button>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-md p-8">
+              {errorMessage && (
+                <Alert variant="destructive" className="mb-6">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{errorMessage}</AlertDescription>
+                </Alert>
+              )}
+              
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      placeholder="John"
+                      {...register("firstName")}
+                      className={errors.firstName ? "border-red-500" : ""}
+                    />
+                    {errors.firstName && (
+                      <p className="text-red-500 text-sm">{errors.firstName.message}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      placeholder="Doe"
+                      {...register("lastName")}
+                      className={errors.lastName ? "border-red-500" : ""}
+                    />
+                    {errors.lastName && (
+                      <p className="text-red-500 text-sm">{errors.lastName.message}</p>
+                    )}
+                  </div>
+                </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label htmlFor="email">Email Address</Label>
                   <Input
-                    id="firstName"
-                    placeholder="John"
-                    {...register("firstName")}
-                    className={errors.firstName ? "border-red-500" : ""}
+                    id="email"
+                    type="email"
+                    placeholder="your@email.com"
+                    {...register("email")}
+                    className={errors.email ? "border-red-500" : ""}
                   />
-                  {errors.firstName && (
-                    <p className="text-red-500 text-sm">{errors.firstName.message}</p>
+                  {errors.email && (
+                    <p className="text-red-500 text-sm">{errors.email.message}</p>
                   )}
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label htmlFor="password">Password</Label>
                   <Input
-                    id="lastName"
-                    placeholder="Doe"
-                    {...register("lastName")}
-                    className={errors.lastName ? "border-red-500" : ""}
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    {...register("password")}
+                    className={errors.password ? "border-red-500" : ""}
                   />
-                  {errors.lastName && (
-                    <p className="text-red-500 text-sm">{errors.lastName.message}</p>
+                  {errors.password && (
+                    <p className="text-red-500 text-sm">{errors.password.message}</p>
                   )}
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  {...register("email")}
-                  className={errors.email ? "border-red-500" : ""}
-                />
-                {errors.email && (
-                  <p className="text-red-500 text-sm">{errors.email.message}</p>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  {...register("password")}
-                  className={errors.password ? "border-red-500" : ""}
-                />
-                {errors.password && (
-                  <p className="text-red-500 text-sm">{errors.password.message}</p>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  {...register("confirmPassword")}
-                  className={errors.confirmPassword ? "border-red-500" : ""}
-                />
-                {errors.confirmPassword && (
-                  <p className="text-red-500 text-sm">{errors.confirmPassword.message}</p>
-                )}
-              </div>
-              
-              <div className="flex items-start space-x-2">
-                <Checkbox id="terms" {...register("terms")} className="mt-1" />
-                <div>
-                  <Label htmlFor="terms" className="text-sm font-normal cursor-pointer">
-                    I agree to the{" "}
-                    <Link to="/terms" className="text-electric-blue hover:underline">
-                      Terms of Service
-                    </Link>{" "}
-                    and{" "}
-                    <Link to="/privacy" className="text-electric-blue hover:underline">
-                      Privacy Policy
+                
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    {...register("confirmPassword")}
+                    className={errors.confirmPassword ? "border-red-500" : ""}
+                  />
+                  {errors.confirmPassword && (
+                    <p className="text-red-500 text-sm">{errors.confirmPassword.message}</p>
+                  )}
+                </div>
+                
+                <div className="flex items-start space-x-2">
+                  <Checkbox 
+                    id="terms" 
+                    checked={termsChecked}
+                    onCheckedChange={handleTermsChange}
+                    className="mt-1"
+                    {...register("terms")}
+                  />
+                  <div>
+                    <Label htmlFor="terms" className="text-sm font-normal cursor-pointer">
+                      I agree to the{" "}
+                      <Link to="/terms" className="text-electric-blue hover:underline">
+                        Terms of Service
+                      </Link>{" "}
+                      and{" "}
+                      <Link to="/privacy" className="text-electric-blue hover:underline">
+                        Privacy Policy
+                      </Link>
+                    </Label>
+                    {errors.terms && (
+                      <p className="text-red-500 text-sm">{errors.terms.message}</p>
+                    )}
+                  </div>
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-electric-blue text-white hover:bg-blue-700"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Creating Account..." : "Create Account"}
+                </Button>
+                
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">
+                    Already have an account?{" "}
+                    <Link to="/login" className="text-electric-blue hover:underline">
+                      Log in
                     </Link>
-                  </Label>
-                  {errors.terms && (
-                    <p className="text-red-500 text-sm">{errors.terms.message}</p>
-                  )}
+                  </p>
+                </div>
+              </form>
+              
+              <div className="relative my-8">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">Or sign up with</span>
                 </div>
               </div>
               
-              <Button 
-                type="submit" 
-                className="w-full bg-electric-blue text-white hover:bg-blue-700"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Creating Account..." : "Create Account"}
-              </Button>
-              
-              <div className="text-center">
-                <p className="text-sm text-gray-600">
-                  Already have an account?{" "}
-                  <Link to="/login" className="text-electric-blue hover:underline">
-                    Log in
-                  </Link>
-                </p>
-              </div>
-            </form>
-            
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or sign up with</span>
+              <div className="grid grid-cols-2 gap-4">
+                <Button variant="outline" type="button" className="w-full">
+                  Google
+                </Button>
+                <Button variant="outline" type="button" className="w-full">
+                  Facebook
+                </Button>
               </div>
             </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" type="button" className="w-full">
-                Google
-              </Button>
-              <Button variant="outline" type="button" className="w-full">
-                Facebook
-              </Button>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </WebsiteLayout>

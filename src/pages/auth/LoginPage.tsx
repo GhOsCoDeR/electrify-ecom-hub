@@ -1,15 +1,17 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import WebsiteLayout from "@/components/layout/WebsiteLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Form validation schema
 const loginSchema = z.object({
@@ -22,7 +24,10 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginPage = () => {
   const { toast } = useToast();
+  const { signIn } = useAuth();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const {
     register,
@@ -37,22 +42,35 @@ const LoginPage = () => {
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsSubmitting(true);
+    setErrorMessage(null);
     
-    // Simulate API request
     try {
-      // In a real app, we would send the login data to an API
-      console.log("Login data:", data);
+      // Sign in with Supabase
+      const userData = await signIn(data.email, data.password);
       
-      // Simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!userData || !userData.user) {
+        throw new Error("Login failed");
+      }
       
       toast({
         title: "Login successful!",
         description: "Welcome back to ElectriCo.",
       });
       
-      // In a real app, we would redirect to the dashboard or homepage
-    } catch (error) {
+      // Redirect to the account page
+      navigate("/account");
+    } catch (error: any) {
+      console.error("Login error:", error);
+      
+      // Handle specific error messages
+      if (error.message.includes("Invalid login credentials")) {
+        setErrorMessage("Invalid email or password. Please try again.");
+      } else if (error.message.includes("Email not confirmed")) {
+        setErrorMessage("Please confirm your email before logging in.");
+      } else {
+        setErrorMessage(error.message || "Login failed. Please try again.");
+      }
+      
       toast({
         title: "Login failed",
         description: "Invalid email or password. Please try again.",
@@ -76,6 +94,13 @@ const LoginPage = () => {
           <h1 className="text-3xl font-bold text-center mb-8">Login to Your Account</h1>
           
           <div className="bg-white rounded-lg shadow-md p-8">
+            {errorMessage && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            )}
+            
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
