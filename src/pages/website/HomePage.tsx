@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import WebsiteLayout from "@/components/layout/WebsiteLayout";
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
+import { ParticlesBackground } from "@/components/effects/ParticlesBackground";
 
 const HomePage = () => {
   const { toast } = useToast();
@@ -64,29 +64,30 @@ const HomePage = () => {
   return (
     <WebsiteLayout>
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-electric-darkgray to-gray-800 text-white py-20">
-        <div className="container mx-auto px-4">
+      <section className="relative bg-gradient-to-r from-electric-darkgray to-gray-800 text-white py-20 overflow-hidden">
+        <ParticlesBackground variant="dark" className="opacity-40" />
+        <div className="container mx-auto px-4 relative">
           <div className="flex flex-col md:flex-row items-center">
             <div className="md:w-1/2 mb-10 md:mb-0">
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              <h1 className="text-4xl md:text-5xl font-bold mb-6 animate-fade-in">
                 Powering Your World with Quality Electrical Solutions
               </h1>
-              <p className="text-xl mb-8">
+              <p className="text-xl mb-8 animate-fade-in animation-delay-200">
                 Premium electrical appliances and expert services for homes and businesses.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 animate-fade-in animation-delay-400">
                 <Link to="/shop">
-                  <Button className="btn-electric-primary px-8 py-6 text-lg">Shop Now</Button>
+                  <Button className="btn-electric-primary px-8 py-6 text-lg hover:scale-105 transition-transform">Shop Now</Button>
                 </Link>
                 <Link to="/services">
-                  <Button className="btn-electric-secondary px-8 py-6 text-lg">Our Services</Button>
+                  <Button className="btn-electric-secondary px-8 py-6 text-lg hover:scale-105 transition-transform">Our Services</Button>
                 </Link>
               </div>
             </div>
             <div className="md:w-1/2 flex justify-center">
-              <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 shadow-2xl">
-                <div className="w-72 h-72 bg-electric-blue rounded-full flex items-center justify-center">
-                  <Zap size={100} className="text-white" />
+              <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 shadow-2xl transform hover:scale-105 transition-transform duration-300">
+                <div className="w-72 h-72 bg-electric-blue rounded-full flex items-center justify-center animate-pulse">
+                  <Zap size={100} className="text-white animate-bounce" />
                 </div>
               </div>
             </div>
