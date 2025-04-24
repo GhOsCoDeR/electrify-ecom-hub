@@ -1,13 +1,18 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 // These should be stored in environment variables in a production app
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Check if the environment variables are defined
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Supabase URL and Anon Key are required');
+  throw new Error(
+    'Supabase environment variables are missing. Please make sure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your environment.'
+  );
 }
 
+// Now we can safely create the client since we've validated the environment variables
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type Tables = {
@@ -62,4 +67,4 @@ export type Tables = {
     name: string;
     value: string;
   };
-}; 
+};
