@@ -1,7 +1,13 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -10,9 +16,11 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import { ProductType } from "@/types/product";
 import { Pencil, Trash2, Plus, Search, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useProductMetadata } from "@/hooks/useProductMetadata";
 
 const AdminProducts = () => {
   const { toast } = useToast();
+  const { categories, brands, isLoading: isMetadataLoading } = useProductMetadata();
   const [products, setProducts] = useState<ProductType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,7 +29,7 @@ const AdminProducts = () => {
     name: "",
     description: "",
     price: 0,
-    image: "/placeholder.svg",
+    image: "",
     category: "",
     rating: 0,
     brand: "",
@@ -72,20 +80,6 @@ const AdminProducts = () => {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCurrentProduct(prev => ({
-          ...prev,
-          image: reader.result as string
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -97,7 +91,7 @@ const AdminProducts = () => {
       name: "",
       description: "",
       price: 0,
-      image: "/placeholder.svg",
+      image: "",
       category: "",
       rating: 0,
       brand: "",
@@ -118,6 +112,13 @@ const AdminProducts = () => {
     setCurrentProduct(prev => ({
       ...prev,
       [name]: type === "checkbox" ? checked : name === "price" ? parseFloat(value) || 0 : value
+    }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setCurrentProduct(prev => ({
+      ...prev,
+      [name]: value
     }));
   };
 
@@ -396,27 +397,43 @@ const AdminProducts = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
-                  name="category"
+                <Select
                   value={currentProduct.category}
-                  onChange={handleInputChange}
-                  placeholder="e.g. kitchen-appliances"
-                />
+                  onValueChange={(value) => handleSelectChange("category", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="brand">Brand</Label>
-                <Input
-                  id="brand"
-                  name="brand"
+                <Select
                   value={currentProduct.brand}
-                  onChange={handleInputChange}
-                  placeholder="e.g. ElectriCo"
-                />
+                  onValueChange={(value) => handleSelectChange("brand", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a brand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brands.map((brand) => (
+                      <SelectItem key={brand.id} value={brand.name}>
+                        {brand.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             
-            <div className="flex items-center space-x-2 pt-6">
+            <div className="flex items-center space-x-2">
               <Input
                 id="inStock"
                 name="inStock"
@@ -429,26 +446,23 @@ const AdminProducts = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="image">Product Image</Label>
-              <div className="flex gap-4 items-center">
-                <Input
-                  id="image"
-                  name="image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="flex-1"
-                />
-                {currentProduct.image && (
-                  <div className="w-20 h-20 rounded border overflow-hidden">
-                    <img 
-                      src={currentProduct.image} 
-                      alt="Product preview" 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-              </div>
+              <Label htmlFor="image">Product Image URL</Label>
+              <Input
+                id="image"
+                name="image"
+                value={currentProduct.image}
+                onChange={handleInputChange}
+                placeholder="Enter image URL"
+              />
+              {currentProduct.image && (
+                <div className="mt-2 w-20 h-20 rounded border overflow-hidden">
+                  <img 
+                    src={currentProduct.image} 
+                    alt="Product preview" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
             </div>
           </div>
           
@@ -456,7 +470,7 @@ const AdminProducts = () => {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
             <Button 
               onClick={handleSaveProduct}
-              disabled={isSaving}
+              disabled={isSaving || !currentProduct.name || !currentProduct.price}
             >
               {isSaving ? (
                 <>
