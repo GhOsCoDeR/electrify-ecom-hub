@@ -13,22 +13,43 @@ import { useToast } from "@/hooks/use-toast";
 
 // Define a settings type
 interface StoreSettings {
-  storeName: string;
-  contactEmail: string;
-  emailNotifications: boolean;
-  maintenanceMode: boolean;
+  id?: string;
+  store_name: string;
+  contact_email: string;
+  logo_url?: string;
+  favicon_url?: string;
+  email_notifications: boolean;
+  maintenance_mode: boolean;
+  currency: string;
+  tax_rate: number;
+  shipping_fee: number;
+  enable_guest_checkout: boolean;
+  theme_color: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface SecuritySettings {
+  currentPassword: string;
+  newPassword: string;
+  twoFactorAuth: boolean;
 }
 
 const AdminSettings = () => {
   const { toast } = useToast();
   const [settings, setSettings] = useState<StoreSettings>({
-    storeName: "ElectriCo Store",
-    contactEmail: "admin@electrico.com",
-    emailNotifications: true,
-    maintenanceMode: false
+    store_name: "ElectriCo Store",
+    contact_email: "admin@electrico.com",
+    email_notifications: true,
+    maintenance_mode: false,
+    currency: "USD",
+    tax_rate: 7.5,
+    shipping_fee: 5.99,
+    enable_guest_checkout: true,
+    theme_color: "#3b82f6"
   });
 
-  const [securitySettings, setSecuritySettings] = useState({
+  const [securitySettings, setSecuritySettings] = useState<SecuritySettings>({
     currentPassword: "",
     newPassword: "",
     twoFactorAuth: false
@@ -40,19 +61,58 @@ const AdminSettings = () => {
 
   // Fetch settings from the database
   useEffect(() => {
-    // In a real application, you would fetch settings from the database
-    // For now, we'll simulate loading
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
-  }, []);
+    const fetchSettings = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('store_settings')
+          .select('*')
+          .single();
+        
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+          throw error;
+        }
+        
+        if (data) {
+          setSettings({
+            id: data.id,
+            store_name: data.store_name,
+            contact_email: data.contact_email,
+            logo_url: data.logo_url,
+            favicon_url: data.favicon_url,
+            email_notifications: data.email_notifications,
+            maintenance_mode: data.maintenance_mode,
+            currency: data.currency,
+            tax_rate: data.tax_rate,
+            shipping_fee: data.shipping_fee,
+            enable_guest_checkout: data.enable_guest_checkout,
+            theme_color: data.theme_color,
+            created_at: data.created_at,
+            updated_at: data.updated_at
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch settings. Using default values.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchSettings();
+  }, [toast]);
 
   const handleSettingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     
     setSettings(prev => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value
+      [name]: type === "checkbox" ? checked : 
+              name === "tax_rate" || name === "shipping_fee" ? parseFloat(value) : value
     }));
   };
 
@@ -69,19 +129,58 @@ const AdminSettings = () => {
     setIsSaving(true);
     
     try {
-      // In a real application, you would save settings to the database
-      // For now, we'll simulate a successful save
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { store_name, contact_email, email_notifications, maintenance_mode,
+              currency, tax_rate, shipping_fee, enable_guest_checkout, theme_color } = settings;
+      
+      const settingsData = {
+        store_name,
+        contact_email,
+        email_notifications,
+        maintenance_mode,
+        currency,
+        tax_rate,
+        shipping_fee,
+        enable_guest_checkout,
+        theme_color,
+        updated_at: new Date().toISOString()
+      };
+      
+      if (settings.id) {
+        // Update existing settings
+        const { error } = await supabase
+          .from('store_settings')
+          .update(settingsData)
+          .eq('id', settings.id);
+        
+        if (error) throw error;
+      } else {
+        // Insert new settings
+        const { data, error } = await supabase
+          .from('store_settings')
+          .insert([settingsData])
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        // Update local state with the new ID
+        setSettings(prev => ({
+          ...prev,
+          id: data.id,
+          created_at: data.created_at,
+          updated_at: data.updated_at
+        }));
+      }
       
       toast({
         title: "Settings saved",
         description: "Your settings have been updated successfully."
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving settings:", error);
       toast({
         title: "Error",
-        description: "Failed to save settings. Please try again.",
+        description: error.message || "Failed to save settings. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -177,24 +276,84 @@ const AdminSettings = () => {
           <CardContent className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="storeName">Store Name</Label>
+                <Label htmlFor="store_name">Store Name</Label>
                 <Input 
-                  id="storeName" 
-                  name="storeName"
-                  value={settings.storeName}
+                  id="store_name" 
+                  name="store_name"
+                  value={settings.store_name}
                   onChange={handleSettingChange}
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="contactEmail">Contact Email</Label>
+                <Label htmlFor="contact_email">Contact Email</Label>
                 <Input 
-                  id="contactEmail" 
-                  name="contactEmail"
+                  id="contact_email" 
+                  name="contact_email"
                   type="email" 
-                  value={settings.contactEmail}
+                  value={settings.contact_email}
                   onChange={handleSettingChange}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="theme_color">Theme Color</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    id="theme_color" 
+                    name="theme_color"
+                    type="color" 
+                    value={settings.theme_color}
+                    onChange={handleSettingChange}
+                    className="w-16 h-10 p-1"
+                  />
+                  <Input 
+                    value={settings.theme_color}
+                    readOnly
+                    className="bg-gray-50"
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currency">Currency</Label>
+                  <Input 
+                    id="currency" 
+                    name="currency"
+                    value={settings.currency}
+                    onChange={handleSettingChange}
+                    maxLength={3}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="tax_rate">Tax Rate (%)</Label>
+                  <Input 
+                    id="tax_rate" 
+                    name="tax_rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={settings.tax_rate}
+                    onChange={handleSettingChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="shipping_fee">Default Shipping Fee ($)</Label>
+                  <Input 
+                    id="shipping_fee" 
+                    name="shipping_fee"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={settings.shipping_fee}
+                    onChange={handleSettingChange}
+                  />
+                </div>
               </div>
 
               <Separator />
@@ -205,9 +364,9 @@ const AdminSettings = () => {
                   <p className="text-sm text-gray-500">Receive email notifications for new orders</p>
                 </div>
                 <Switch 
-                  name="emailNotifications"
-                  checked={settings.emailNotifications}
-                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, emailNotifications: checked }))}
+                  name="email_notifications"
+                  checked={settings.email_notifications}
+                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, email_notifications: checked }))}
                 />
               </div>
 
@@ -217,9 +376,21 @@ const AdminSettings = () => {
                   <p className="text-sm text-gray-500">Put store in maintenance mode</p>
                 </div>
                 <Switch 
-                  name="maintenanceMode"
-                  checked={settings.maintenanceMode}
-                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, maintenanceMode: checked }))}
+                  name="maintenance_mode"
+                  checked={settings.maintenance_mode}
+                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, maintenance_mode: checked }))}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Guest Checkout</Label>
+                  <p className="text-sm text-gray-500">Allow checkout without account</p>
+                </div>
+                <Switch 
+                  name="enable_guest_checkout"
+                  checked={settings.enable_guest_checkout}
+                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, enable_guest_checkout: checked }))}
                 />
               </div>
               
