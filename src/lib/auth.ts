@@ -1,3 +1,4 @@
+
 import { supabase } from './supabase';
 
 // Sign up with email and password
@@ -7,9 +8,6 @@ export const signUp = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: {
-      emailRedirectTo: `${window.location.origin}/login`
-    }
   });
   
   if (error) {
@@ -19,7 +17,7 @@ export const signUp = async (email: string, password: string) => {
   
   console.log('Sign up response data:', data);
   
-  // Important: Check if user is actually created or if email confirmation is required
+  // Check if user is actually created or if email confirmation is required
   if (data?.user?.identities?.length === 0) {
     throw new Error('Email already registered');
   }
@@ -131,7 +129,6 @@ export const createUserProfile = async (userId: string, profileData: {
       return existingUser;
     }
     
-    // Temporarily disable RLS for this operation by using service role if possible
     const { data, error } = await supabase
       .from('users')
       .insert([
@@ -166,4 +163,25 @@ export const createUserProfile = async (userId: string, profileData: {
     // Instead of throwing, return a basic profile so the app can continue
     return { id: userId, ...profileData };
   }
-}; 
+};
+
+// Get user profile data
+export const getUserProfile = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+      
+    if (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in getUserProfile:', error);
+    return null;
+  }
+};

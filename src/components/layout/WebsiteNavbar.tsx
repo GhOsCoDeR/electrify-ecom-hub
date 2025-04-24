@@ -2,12 +2,14 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ShoppingCart, User } from "lucide-react";
+import { Menu, X, ShoppingCart, User, LogOut } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const WebsiteNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { getCartCount } = useCart();
+  const { user, profile, signOut } = useAuth();
   const location = useLocation();
 
   const toggleMenu = () => {
@@ -28,6 +30,16 @@ const WebsiteNavbar = () => {
       : "text-electric-darkgray hover:text-electric-blue transition-colors duration-300";
   };
 
+  // Get user's name for welcome message
+  const getUserName = () => {
+    if (!profile) return null;
+    return profile.first_name || profile.email.split('@')[0];
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+  };
+
   return (
     <nav className="bg-white shadow-md">
       <div className="container mx-auto px-4">
@@ -39,6 +51,13 @@ const WebsiteNavbar = () => {
             </div>
             <span className="font-bold text-xl text-electric-darkgray">ElectriCo</span>
           </Link>
+
+          {/* Welcome message for logged in users */}
+          {user && (
+            <div className="hidden md:block text-sm font-medium text-electric-blue">
+              Welcome, {getUserName()}!
+            </div>
+          )}
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-8">
@@ -59,13 +78,35 @@ const WebsiteNavbar = () => {
                 </div>
               )}
             </Link>
-            <Link to="/login" className={isActive('/login') ? 'text-electric-blue' : 'text-electric-darkgray hover:text-electric-blue'}>
-              <User size={24} />
-            </Link>
+            
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <Link to="/account" className={isActive('/account') ? 'text-electric-blue' : 'text-electric-darkgray hover:text-electric-blue'}>
+                  <User size={24} />
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleLogout}
+                  className="text-electric-darkgray hover:text-electric-blue"
+                >
+                  <LogOut size={20} />
+                </Button>
+              </div>
+            ) : (
+              <Link to="/login" className={isActive('/login') ? 'text-electric-blue' : 'text-electric-darkgray hover:text-electric-blue'}>
+                <User size={24} />
+              </Link>
+            )}
           </div>
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center">
+            {user && (
+              <div className="mr-4 text-xs font-medium text-electric-blue">
+                Welcome, {getUserName()}!
+              </div>
+            )}
             <button
               onClick={toggleMenu}
               className="text-electric-darkgray focus:outline-none"
@@ -128,11 +169,31 @@ const WebsiteNavbar = () => {
                       </div>
                     )}
                   </Link>
-                  <Link to="/login" 
-                    className={isActive('/login') ? 'text-electric-blue' : 'text-electric-darkgray hover:text-electric-blue'}
-                    onClick={toggleMenu}>
-                    <User size={24} />
-                  </Link>
+                  
+                  {user ? (
+                    <>
+                      <Link to="/account" 
+                        className={isActive('/account') ? 'text-electric-blue' : 'text-electric-darkgray hover:text-electric-blue'}
+                        onClick={toggleMenu}>
+                        <User size={24} />
+                      </Link>
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          toggleMenu();
+                        }}
+                        className="text-electric-darkgray hover:text-electric-blue"
+                      >
+                        <LogOut size={24} />
+                      </button>
+                    </>
+                  ) : (
+                    <Link to="/login" 
+                      className={isActive('/login') ? 'text-electric-blue' : 'text-electric-darkgray hover:text-electric-blue'}
+                      onClick={toggleMenu}>
+                      <User size={24} />
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>

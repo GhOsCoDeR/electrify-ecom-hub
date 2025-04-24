@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -19,7 +20,7 @@ const registerSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(1, "Please confirm your password"),
   terms: z.boolean().refine(val => val === true, {
     message: "You must agree to the terms and conditions",
@@ -38,7 +39,6 @@ const RegisterPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [termsChecked, setTermsChecked] = useState(false);
-  const [emailConfirmationSent, setEmailConfirmationSent] = useState(false);
   
   const {
     register,
@@ -58,15 +58,6 @@ const RegisterPage = () => {
   };
 
   const onSubmit = async (data: RegisterFormValues) => {
-    if (emailConfirmationSent) {
-      toast({
-        title: "Confirmation email already sent",
-        description: "Please check your email to confirm your account.",
-      });
-      navigate("/login");
-      return;
-    }
-    
     setIsSubmitting(true);
     setErrorMessage(null);
     
@@ -87,59 +78,20 @@ const RegisterPage = () => {
         throw new Error("Failed to create user account");
       }
       
-      // User exists but identities array is empty - this means the email is already registered
-      if (userData.user.identities && userData.user.identities.length === 0) {
-        setErrorMessage("This email is already registered. Please try logging in instead.");
-        return;
-      }
+      // Create the user profile in the database
+      await createUserProfile(userData.user.id, {
+        email: data.email,
+        first_name: data.firstName,
+        last_name: data.lastName
+      });
       
-      // Email confirmation is required - Supabase returns user but no session in this case
-      if (userData.user && !userData.session) {
-        setEmailConfirmationSent(true);
-        toast({
-          title: "Registration successful!",
-          description: "Please check your email to confirm your account.",
-        });
-        navigate("/login");
-        return;
-      }
+      toast({
+        title: "Registration successful!",
+        description: "Your account has been created. You can now log in.",
+      });
       
-      // If we have a session, we can create the user profile now
-      if (userData.user && userData.session) {
-        try {
-          // Create the user profile in the database
-          const profile = await createUserProfile(userData.user.id, {
-            email: data.email,
-            first_name: data.firstName,
-            last_name: data.lastName
-          });
-          
-          console.log("User profile created:", profile);
-          
-          toast({
-            title: "Registration successful!",
-            description: "Your account has been created.",
-          });
-          
-          // Redirect to the account page or homepage
-          navigate("/account");
-        } catch (profileError: any) {
-          console.error("Error creating user profile:", profileError);
-          // If profile creation fails but account was created, still consider it a success
-          toast({
-            title: "Registration successful!",
-            description: "Your account has been created but profile setup encountered an issue. You can update your profile later.",
-          });
-          navigate("/login");
-        }
-      } else {
-        // This should not happen if the previous checks are working correctly
-        toast({
-          title: "Registration successful!",
-          description: "Your account has been created.",
-        });
-        navigate("/login");
-      }
+      navigate("/login");
+      
     } catch (error: any) {
       console.error("Registration error:", error);
       
@@ -176,162 +128,146 @@ const RegisterPage = () => {
           
           <h1 className="text-3xl font-bold text-center mb-8">Create an Account</h1>
           
-          {emailConfirmationSent ? (
-            <div className="bg-white rounded-lg shadow-md p-8">
-              <Alert className="mb-6 bg-green-50 text-green-800 border-green-200">
-                <AlertDescription className="font-medium">
-                  Please check your email to confirm your account. You will receive an email with a confirmation link.
-                </AlertDescription>
+          <div className="bg-white rounded-lg shadow-md p-8">
+            {errorMessage && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{errorMessage}</AlertDescription>
               </Alert>
-              <Button
-                onClick={() => navigate("/login")}
+            )}
+            
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    placeholder="John"
+                    {...register("firstName")}
+                    className={errors.firstName ? "border-red-500" : ""}
+                  />
+                  {errors.firstName && (
+                    <p className="text-red-500 text-sm">{errors.firstName.message}</p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    placeholder="Doe"
+                    {...register("lastName")}
+                    className={errors.lastName ? "border-red-500" : ""}
+                  />
+                  {errors.lastName && (
+                    <p className="text-red-500 text-sm">{errors.lastName.message}</p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  {...register("email")}
+                  className={errors.email ? "border-red-500" : ""}
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-sm">{errors.email.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  {...register("password")}
+                  className={errors.password ? "border-red-500" : ""}
+                />
+                {errors.password && (
+                  <p className="text-red-500 text-sm">{errors.password.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  {...register("confirmPassword")}
+                  className={errors.confirmPassword ? "border-red-500" : ""}
+                />
+                {errors.confirmPassword && (
+                  <p className="text-red-500 text-sm">{errors.confirmPassword.message}</p>
+                )}
+              </div>
+              
+              <div className="flex items-start space-x-2">
+                <Checkbox 
+                  id="terms" 
+                  checked={termsChecked}
+                  onCheckedChange={handleTermsChange}
+                  className="mt-1"
+                  {...register("terms")}
+                />
+                <div>
+                  <Label htmlFor="terms" className="text-sm font-normal cursor-pointer">
+                    I agree to the{" "}
+                    <Link to="/terms" className="text-electric-blue hover:underline">
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link to="/privacy" className="text-electric-blue hover:underline">
+                      Privacy Policy
+                    </Link>
+                  </Label>
+                  {errors.terms && (
+                    <p className="text-red-500 text-sm">{errors.terms.message}</p>
+                  )}
+                </div>
+              </div>
+              
+              <Button 
+                type="submit" 
                 className="w-full bg-electric-blue text-white hover:bg-blue-700"
+                disabled={isSubmitting}
               >
-                Go to Login Page
+                {isSubmitting ? "Creating Account..." : "Create Account"}
+              </Button>
+              
+              <div className="text-center">
+                <p className="text-sm text-gray-600">
+                  Already have an account?{" "}
+                  <Link to="/login" className="text-electric-blue hover:underline">
+                    Log in
+                  </Link>
+                </p>
+              </div>
+            </form>
+            
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or sign up with</span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <Button variant="outline" type="button" className="w-full">
+                Google
+              </Button>
+              <Button variant="outline" type="button" className="w-full">
+                Facebook
               </Button>
             </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow-md p-8">
-              {errorMessage && (
-                <Alert variant="destructive" className="mb-6">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
-              )}
-              
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      placeholder="John"
-                      {...register("firstName")}
-                      className={errors.firstName ? "border-red-500" : ""}
-                    />
-                    {errors.firstName && (
-                      <p className="text-red-500 text-sm">{errors.firstName.message}</p>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      placeholder="Doe"
-                      {...register("lastName")}
-                      className={errors.lastName ? "border-red-500" : ""}
-                    />
-                    {errors.lastName && (
-                      <p className="text-red-500 text-sm">{errors.lastName.message}</p>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    {...register("email")}
-                    className={errors.email ? "border-red-500" : ""}
-                  />
-                  {errors.email && (
-                    <p className="text-red-500 text-sm">{errors.email.message}</p>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    {...register("password")}
-                    className={errors.password ? "border-red-500" : ""}
-                  />
-                  {errors.password && (
-                    <p className="text-red-500 text-sm">{errors.password.message}</p>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    {...register("confirmPassword")}
-                    className={errors.confirmPassword ? "border-red-500" : ""}
-                  />
-                  {errors.confirmPassword && (
-                    <p className="text-red-500 text-sm">{errors.confirmPassword.message}</p>
-                  )}
-                </div>
-                
-                <div className="flex items-start space-x-2">
-                  <Checkbox 
-                    id="terms" 
-                    checked={termsChecked}
-                    onCheckedChange={handleTermsChange}
-                    className="mt-1"
-                    {...register("terms")}
-                  />
-                  <div>
-                    <Label htmlFor="terms" className="text-sm font-normal cursor-pointer">
-                      I agree to the{" "}
-                      <Link to="/terms" className="text-electric-blue hover:underline">
-                        Terms of Service
-                      </Link>{" "}
-                      and{" "}
-                      <Link to="/privacy" className="text-electric-blue hover:underline">
-                        Privacy Policy
-                      </Link>
-                    </Label>
-                    {errors.terms && (
-                      <p className="text-red-500 text-sm">{errors.terms.message}</p>
-                    )}
-                  </div>
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full bg-electric-blue text-white hover:bg-blue-700"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Creating Account..." : "Create Account"}
-                </Button>
-                
-                <div className="text-center">
-                  <p className="text-sm text-gray-600">
-                    Already have an account?{" "}
-                    <Link to="/login" className="text-electric-blue hover:underline">
-                      Log in
-                    </Link>
-                  </p>
-                </div>
-              </form>
-              
-              <div className="relative my-8">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or sign up with</span>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <Button variant="outline" type="button" className="w-full">
-                  Google
-                </Button>
-                <Button variant="outline" type="button" className="w-full">
-                  Facebook
-                </Button>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </WebsiteLayout>

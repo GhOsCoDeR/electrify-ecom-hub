@@ -1,3 +1,4 @@
+
 import { ReactNode, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,7 +11,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
 
-  // If still loading, show nothing (or a loading spinner)
+  // If still loading, show a loading spinner
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -28,4 +29,4 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   return <>{children}</>;
 };
 
-export default ProtectedRoute; 
+export default ProtectedRoute;

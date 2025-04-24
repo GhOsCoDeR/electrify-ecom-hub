@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -16,7 +17,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 // Form validation schema
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(1, "Password is required"),
   rememberMe: z.boolean().optional(),
 });
 
@@ -63,9 +64,9 @@ const LoginPage = () => {
       console.error("Login error:", error);
       
       // Handle specific error messages
-      if (error.message.includes("Invalid login credentials")) {
+      if (error.message?.includes("Invalid login credentials")) {
         setErrorMessage("Invalid email or password. Please try again.");
-      } else if (error.message.includes("Email not confirmed")) {
+      } else if (error.message?.includes("Email not confirmed")) {
         setErrorMessage("Please confirm your email before logging in.");
       } else {
         setErrorMessage(error.message || "Login failed. Please try again.");
