@@ -7,6 +7,8 @@
   publish = "dist"
   # Build command
   command = "npm run build"
+  # Site ID for deployment
+  site_id = "53095722-cb2b-455b-b343-4e0160044a97"
 
 # Handle SPA routing - redirect all paths to index.html
 [[redirects]]
@@ -23,4 +25,18 @@
 [[headers]]
   for = "/assets/*"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable" 
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Configure secrets scanning
+[secrets]
+  SECRETS_SCAN_OMIT_KEYS = [
+    "VITE_SUPABASE_URL",
+    "VITE_SUPABASE_ANON_KEY"
+  ]
+  SECRETS_SCAN_OMIT_PATHS = [
+    "dist/**/*",
+    ".env*",
+    "src/lib/supabase.ts"
+  ]
+  # Only scan specific file types
+  SECRETS_SCAN_FILE_EXTENSIONS = [".js", ".ts", ".jsx", ".tsx", ".json", ".env"] 
