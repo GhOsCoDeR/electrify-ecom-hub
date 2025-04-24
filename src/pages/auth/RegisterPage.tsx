@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -13,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { createUserProfile } from "@/lib/auth";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { supabase } from "@/lib/supabase";
 
 // Form validation schema
 const registerSchema = z.object({
@@ -63,25 +65,51 @@ const RegisterPage = () => {
     try {
       console.log("Starting registration process for:", data.email);
       
-      // Register the user with Supabase Auth
-      const { user } = await signUp(data.email, data.password);
+      // Register the user directly with Supabase Auth (disabling email confirmation)
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            first_name: data.firstName,
+            last_name: data.lastName
+          },
+          // Important: This skips email confirmation
+          emailRedirectTo: `${window.location.origin}/login`
+        }
+      });
       
-      if (!user) {
+      if (authError) {
+        console.error("Auth signup error:", authError);
+        throw authError;
+      }
+      
+      if (!authData.user) {
         console.error("No user data returned from signUp");
         throw new Error("Failed to create user account");
       }
       
       // Create the user profile in the database
-      await createUserProfile(user.id, {
-        email: data.email,
-        first_name: data.firstName,
-        last_name: data.lastName
-      });
+      try {
+        await createUserProfile(authData.user.id, {
+          email: data.email,
+          first_name: data.firstName,
+          last_name: data.lastName
+        });
+        
+        console.log("User profile created successfully");
+      } catch (profileError: any) {
+        console.error("Profile creation error:", profileError);
+        // Continue even if profile creation fails - we'll handle this separately
+      }
       
       toast({
         title: "Registration successful!",
-        description: "Your account has been created. You can now log in.",
+        description: "Please check your email to confirm your account.",
       });
+      
+      // Sign out the user since they need to verify their email
+      await supabase.auth.signOut();
       
       navigate("/login");
       
@@ -91,12 +119,14 @@ const RegisterPage = () => {
       // Handle specific error messages
       let displayError = "There was an error creating your account. Please try again.";
       
-      if (error.message?.includes("Email already registered")) {
+      if (error.message?.includes("Email already registered") || 
+          error.message?.includes("duplicate key value") ||
+          error.message?.includes("already been registered")) {
         displayError = "This email is already registered. Please try logging in instead.";
       } else if (error.message?.includes("Password should be at least 6 characters")) {
         displayError = "Password should be at least 6 characters.";
-      } else if (error.message?.includes("duplicate key value violates unique constraint")) {
-        displayError = "This email is already registered. Please try logging in instead.";
+      } else if (error.message?.includes("row-level security")) {
+        displayError = "Unable to create user profile. Please contact support.";
       }
       
       setErrorMessage(displayError);

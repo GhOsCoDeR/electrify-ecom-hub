@@ -112,36 +112,19 @@ export const createUserProfile = async (userId: string, profileData: {
   console.log('Creating user profile for user:', userId);
   
   try {
-    // First check if user already exists in the profile table
-    const { data: existingUser, error: checkError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', userId)
-      .single();
-      
-    if (checkError) {
-      if (checkError.code === 'PGRST116') {
-        // User doesn't exist, create the profile
-        console.log('User profile does not exist, creating new profile');
-      } else {
-        console.error('Error checking existing user:', checkError);
-        throw checkError;
-      }
-    }
-    
-    if (existingUser) {
-      console.log('User profile already exists:', existingUser);
-      return existingUser;
-    }
-    
+    // Use upsert to handle both insert and update cases
     const { data, error } = await supabase
       .from('users')
-      .insert([
+      .upsert([
         { 
           id: userId,
           ...profileData
         }
-      ])
+      ], 
+      { 
+        onConflict: 'id',
+        ignoreDuplicates: false
+      })
       .select();
     
     if (error) {
@@ -149,7 +132,7 @@ export const createUserProfile = async (userId: string, profileData: {
       throw error;
     }
     
-    console.log('User profile created successfully:', data);
+    console.log('User profile created or updated successfully:', data);
     return data[0];
   } catch (error) {
     console.error('Error in createUserProfile:', error);
