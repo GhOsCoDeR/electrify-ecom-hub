@@ -65,7 +65,7 @@ const HomePage = () => {
     <WebsiteLayout>
       {/* Hero Section */}
       <section className="relative bg-gradient-to-r from-electric-darkgray to-gray-800 text-white py-20 overflow-hidden">
-        <ParticlesBackground variant="dark" className="opacity-40" />
+        <ParticlesBackground variant="hero" className="opacity-40" />
         <div className="container mx-auto px-4 relative">
           <div className="flex flex-col md:flex-row items-center">
             <div className="md:w-1/2 mb-10 md:mb-0">
@@ -96,12 +96,13 @@ const HomePage = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20">
+      <section className="relative py-20 overflow-hidden">
+        <ParticlesBackground variant="features" className="opacity-30" />
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Why Choose ElectriCo?</h2>
+          <h2 className="text-3xl font-bold text-center mb-12 animate-fade-in">Why Choose ElectriCo?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow duration-300">
-              <div className="bg-electric-blue/10 w-20 h-20 flex items-center justify-center rounded-full mx-auto mb-6">
+            <div className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <div className="bg-electric-blue/10 w-20 h-20 flex items-center justify-center rounded-full mx-auto mb-6 animate-pulse-glow">
                 <Award size={40} className="text-electric-blue" />
               </div>
               <h3 className="text-xl font-bold mb-3">Quality Products</h3>
@@ -109,8 +110,8 @@ const HomePage = () => {
                 We offer only the highest quality electrical appliances and products, ensuring durability and performance.
               </p>
             </div>
-            <div className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow duration-300">
-              <div className="bg-electric-blue/10 w-20 h-20 flex items-center justify-center rounded-full mx-auto mb-6">
+            <div className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <div className="bg-electric-blue/10 w-20 h-20 flex items-center justify-center rounded-full mx-auto mb-6 animate-pulse-glow">
                 <Zap size={40} className="text-electric-blue" />
               </div>
               <h3 className="text-xl font-bold mb-3">Energy Efficient</h3>
@@ -118,8 +119,8 @@ const HomePage = () => {
                 Our products are designed to be energy efficient, helping you save money and protect the environment.
               </p>
             </div>
-            <div className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow duration-300">
-              <div className="bg-electric-blue/10 w-20 h-20 flex items-center justify-center rounded-full mx-auto mb-6">
+            <div className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <div className="bg-electric-blue/10 w-20 h-20 flex items-center justify-center rounded-full mx-auto mb-6 animate-pulse-glow">
                 <Users size={40} className="text-electric-blue" />
               </div>
               <h3 className="text-xl font-bold mb-3">Expert Support</h3>
@@ -132,16 +133,23 @@ const HomePage = () => {
       </section>
 
       {/* Products Preview Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="relative py-20 bg-gray-50 overflow-hidden">
+        <ParticlesBackground variant="products" className="opacity-20" />
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-10">
-            <h2 className="text-3xl font-bold">Featured Products</h2>
-            <Link to="/shop" className="text-electric-blue hover:underline font-medium">View All Products</Link>
+            <h2 className="text-3xl font-bold animate-fade-in">Featured Products</h2>
+            <Link to="/shop" className="text-electric-blue hover:underline font-medium hover:scale-105 transition-transform">
+              View All Products
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProducts.map((product) => (
-              <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+            {featuredProducts.map((product, index) => (
+              <div 
+                key={product.id} 
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-2"
+                style={{ animationDelay: `${index * 200}ms` }}
+              >
                 <div className="bg-gray-100 p-6 flex items-center justify-center h-64">
                   <img
                     src={product.image}
@@ -179,23 +187,28 @@ const HomePage = () => {
 
           <div className="mt-12 text-center">
             <Link to="/shop">
-              <Button className="btn-electric-secondary px-8">Browse All Products</Button>
+              <Button className="btn-electric-secondary px-8 hover:scale-105 transition-transform">
+                Browse All Products
+              </Button>
             </Link>
           </div>
         </div>
       </section>
 
       {/* Services Preview Section */}
-      <section className="py-20">
+      <section className="relative py-20 overflow-hidden">
+        <ParticlesBackground variant="services" className="opacity-15" />
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-10">
-            <h2 className="text-3xl font-bold">Our Services</h2>
-            <Link to="/services" className="text-electric-blue hover:underline font-medium">View All Services</Link>
+            <h2 className="text-3xl font-bold animate-fade-in">Our Services</h2>
+            <Link to="/services" className="text-electric-blue hover:underline font-medium hover:scale-105 transition-transform">
+              View All Services
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white rounded-lg shadow-md p-8 flex items-start hover:shadow-lg transition-shadow duration-300">
-              <div className="bg-electric-blue/10 w-16 h-16 flex items-center justify-center rounded-full mr-6">
+            <div className="bg-white rounded-lg shadow-md p-8 flex items-start hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              <div className="bg-electric-blue/10 w-16 h-16 flex items-center justify-center rounded-full mr-6 animate-pulse-glow">
                 <Wrench size={30} className="text-electric-blue" />
               </div>
               <div>
@@ -208,8 +221,8 @@ const HomePage = () => {
                 </Link>
               </div>
             </div>
-            <div className="bg-white rounded-lg shadow-md p-8 flex items-start hover:shadow-lg transition-shadow duration-300">
-              <div className="bg-electric-blue/10 w-16 h-16 flex items-center justify-center rounded-full mr-6">
+            <div className="bg-white rounded-lg shadow-md p-8 flex items-start hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              <div className="bg-electric-blue/10 w-16 h-16 flex items-center justify-center rounded-full mr-6 animate-pulse-glow">
                 <ShieldCheck size={30} className="text-electric-blue" />
               </div>
               <div>
@@ -227,18 +240,23 @@ const HomePage = () => {
       </section>
 
       {/* Call to Action */}
-      <section className="py-16 bg-electric-blue text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Electrify Your Life?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
+      <section className="relative py-16 bg-electric-blue text-white overflow-hidden">
+        <ParticlesBackground variant="cta" className="opacity-30" />
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <h2 className="text-3xl font-bold mb-4 animate-fade-in">Ready to Electrify Your Life?</h2>
+          <p className="text-xl mb-8 max-w-2xl mx-auto animate-fade-in animation-delay-200">
             Browse our wide range of high-quality electrical products or schedule a service appointment today.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-4 animate-fade-in animation-delay-400">
             <Link to="/shop">
-              <Button className="bg-white text-electric-blue hover:bg-gray-100 px-8 py-6 text-lg">Shop Products</Button>
+              <Button className="bg-white text-electric-blue hover:bg-gray-100 px-8 py-6 text-lg hover:scale-105 transition-transform">
+                Shop Products
+              </Button>
             </Link>
             <Link to="/contact">
-              <Button className="bg-transparent border border-white text-white hover:bg-white/10 px-8 py-6 text-lg">Contact Us</Button>
+              <Button className="bg-transparent border border-white text-white hover:bg-white/10 px-8 py-6 text-lg hover:scale-105 transition-transform">
+                Contact Us
+              </Button>
             </Link>
           </div>
         </div>
