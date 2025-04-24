@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { Container, Engine } from "tsparticles-engine";
+import type { Container, Engine, MoveDirection, OutMode } from "tsparticles-engine";
 import Particles from "react-tsparticles";
 import { loadSlim } from "tsparticles-slim";
 
@@ -20,9 +20,11 @@ const PARTICLE_PRESETS = {
         width: 1,
       },
       move: {
-        direction: "none",
+        direction: "none" as MoveDirection,
         enable: true,
-        outModes: { default: "bounce" },
+        outModes: {
+          default: "bounce" as OutMode,
+        },
         random: false,
         speed: 2,
         straight: false,
@@ -40,9 +42,11 @@ const PARTICLE_PRESETS = {
         enable: false,
       },
       move: {
-        direction: "top",
+        direction: "top" as MoveDirection,
         enable: true,
-        outModes: { default: "out" },
+        outModes: {
+          default: "out" as OutMode,
+        },
         random: true,
         speed: 1,
         straight: false,
@@ -64,9 +68,11 @@ const PARTICLE_PRESETS = {
         width: 1,
       },
       move: {
+        direction: "none" as MoveDirection,
         enable: true,
-        direction: "none",
-        outModes: { default: "out" },
+        outModes: {
+          default: "out" as OutMode,
+        },
         random: true,
         speed: 1.5,
         straight: false,
@@ -88,9 +94,11 @@ const PARTICLE_PRESETS = {
         width: 1,
       },
       move: {
+        direction: "none" as MoveDirection,
         enable: true,
-        direction: "none",
-        outModes: { default: "bounce" },
+        outModes: {
+          default: "bounce" as OutMode,
+        },
         random: false,
         speed: 1,
         straight: false,
@@ -112,9 +120,11 @@ const PARTICLE_PRESETS = {
         width: 1,
       },
       move: {
+        direction: "none" as MoveDirection,
         enable: true,
-        direction: "none",
-        outModes: { default: "out" },
+        outModes: {
+          default: "out" as OutMode,
+        },
         random: true,
         speed: 2,
         straight: false,
