@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -7,47 +8,13 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { ProductType } from "@/types/product";
-import { Pencil, Trash2, Plus, Search } from "lucide-react";
-
-const initialProducts: ProductType[] = [
-  {
-    id: 1,
-    name: "Premium Electric Mixer",
-    description: "High-quality electric mixer with multiple speed settings",
-    price: 249.99,
-    image: "/placeholder.svg",
-    category: "kitchen-appliances",
-    rating: 4.8,
-    brand: "ElectriCo",
-    inStock: true
-  },
-  {
-    id: 2,
-    name: "Smart LED Bulb",
-    description: "Energy-efficient LED bulb with smart controls",
-    price: 34.99,
-    image: "/placeholder.svg",
-    category: "lighting",
-    rating: 4.5,
-    brand: "BrightLife",
-    inStock: true
-  },
-  {
-    id: 3,
-    name: "Wireless Power Strip",
-    description: "Convenient power strip with wireless charging capabilities",
-    price: 129.95,
-    image: "/placeholder.svg",
-    category: "home-appliances",
-    rating: 4.2,
-    brand: "PowerPlus",
-    inStock: false
-  }
-];
+import { Pencil, Trash2, Plus, Search, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 const AdminProducts = () => {
   const { toast } = useToast();
-  const [products, setProducts] = useState<ProductType[]>(initialProducts);
+  const [products, setProducts] = useState<ProductType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Partial<ProductType>>({
@@ -61,6 +28,49 @@ const AdminProducts = () => {
     inStock: true
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*');
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Transform the data to match ProductType
+      const transformedProducts: ProductType[] = data.map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description || "",
+        price: Number(item.price),
+        image: item.image || "/placeholder.svg",
+        category: item.category || "",
+        rating: 0, // Default rating since it's not in the database
+        brand: item.brand || "",
+        inStock: item.in_stock === true
+      }));
+      
+      setProducts(transformedProducts);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch products. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -111,40 +121,134 @@ const AdminProducts = () => {
     }));
   };
 
-  const handleSaveProduct = () => {
-    if (isEditing) {
-      setProducts(products.map(product => 
-        product.id === currentProduct.id ? { ...currentProduct as ProductType } : product
-      ));
-      
+  const handleSaveProduct = async () => {
+    if (!currentProduct.name || !currentProduct.price) {
       toast({
-        title: "Product updated",
-        description: `${currentProduct.name} has been updated successfully.`
+        title: "Validation Error",
+        description: "Product name and price are required.",
+        variant: "destructive"
       });
-    } else {
-      const newProduct = {
-        ...currentProduct,
-        id: Math.max(...products.map(p => p.id)) + 1
-      } as ProductType;
-      
-      setProducts([...products, newProduct]);
-      
-      toast({
-        title: "Product added",
-        description: `${newProduct.name} has been added successfully.`
-      });
+      return;
     }
     
-    setIsDialogOpen(false);
+    setIsSaving(true);
+    
+    try {
+      // Prepare the data for Supabase
+      const productData = {
+        name: currentProduct.name,
+        description: currentProduct.description,
+        price: currentProduct.price,
+        image: currentProduct.image,
+        category: currentProduct.category,
+        brand: currentProduct.brand,
+        in_stock: currentProduct.inStock
+      };
+      
+      let result;
+      
+      if (isEditing && currentProduct.id) {
+        // Update existing product
+        const { data, error } = await supabase
+          .from('products')
+          .update(productData)
+          .eq('id', currentProduct.id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+        
+        toast({
+          title: "Product updated",
+          description: `${currentProduct.name} has been updated successfully.`
+        });
+        
+        // Update the products array
+        setProducts(products.map(product => 
+          product.id === currentProduct.id ? {
+            ...product,
+            ...productData,
+            price: Number(productData.price)
+          } : product
+        ));
+      } else {
+        // Insert new product
+        const { data, error } = await supabase
+          .from('products')
+          .insert([productData])
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+        
+        toast({
+          title: "Product added",
+          description: `${currentProduct.name} has been added successfully.`
+        });
+        
+        // Add the new product to the products array
+        const newProduct: ProductType = {
+          id: result.id,
+          name: result.name,
+          description: result.description || "",
+          price: Number(result.price),
+          image: result.image || "/placeholder.svg",
+          category: result.category || "",
+          rating: 0,
+          brand: result.brand || "",
+          inStock: result.in_stock === true
+        };
+        
+        setProducts([...products, newProduct]);
+      }
+      
+      setIsDialogOpen(false);
+    } catch (error: any) {
+      console.error("Error saving product:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save product. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleDeleteProduct = (id: number) => {
-    setProducts(products.filter(product => product.id !== id));
+  const handleDeleteProduct = async (id: number) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this product?");
     
-    toast({
-      title: "Product deleted",
-      description: "The product has been deleted successfully."
-    });
+    if (!confirmDelete) return;
+    
+    setIsDeleting(true);
+    
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Update the products array
+      setProducts(products.filter(product => product.id !== id));
+      
+      toast({
+        title: "Product deleted",
+        description: "The product has been deleted successfully."
+      });
+    } catch (error: any) {
+      console.error("Error deleting product:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete product. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -176,65 +280,71 @@ const AdminProducts = () => {
             </div>
           </div>
           
-          <div className="border rounded-md">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Brand</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Rating</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProducts.length > 0 ? (
-                  filteredProducts.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell>${product.price.toFixed(2)}</TableCell>
-                      <TableCell>{product.category}</TableCell>
-                      <TableCell>{product.brand}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          product.inStock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {product.inStock ? 'In Stock' : 'Out of Stock'}
-                        </span>
-                      </TableCell>
-                      <TableCell>{product.rating}</TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => openEditDialog(product)}
-                          className="mr-2"
-                        >
-                          <Pencil size={16} />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleDeleteProduct(product.id)}
-                          className="text-red-500"
-                        >
-                          <Trash2 size={16} />
-                        </Button>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-electric-blue" />
+              <span className="ml-2">Loading products...</span>
+            </div>
+          ) : (
+            <div className="border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Brand</TableHead>
+                    <TableHead>Stock</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredProducts.length > 0 ? (
+                    filteredProducts.map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell className="font-medium">{product.name}</TableCell>
+                        <TableCell>${product.price.toFixed(2)}</TableCell>
+                        <TableCell>{product.category}</TableCell>
+                        <TableCell>{product.brand}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            product.inStock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {product.inStock ? 'In Stock' : 'Out of Stock'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => openEditDialog(product)}
+                            className="mr-2"
+                          >
+                            <Pencil size={16} />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleDeleteProduct(product.id)}
+                            className="text-red-500"
+                            disabled={isDeleting}
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                        No products found
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-6 text-gray-500">
-                      No products found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </div>
       </div>
       
@@ -306,32 +416,16 @@ const AdminProducts = () => {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="rating">Rating (0-5)</Label>
-                <Input
-                  id="rating"
-                  name="rating"
-                  type="number"
-                  min="0"
-                  max="5"
-                  step="0.1"
-                  value={currentProduct.rating}
-                  onChange={handleInputChange}
-                  placeholder="e.g. 4.5"
-                />
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <Input
-                  id="inStock"
-                  name="inStock"
-                  type="checkbox"
-                  checked={currentProduct.inStock}
-                  onChange={handleInputChange}
-                  className="w-4 h-4"
-                />
-                <Label htmlFor="inStock">In Stock</Label>
-              </div>
+            <div className="flex items-center space-x-2 pt-6">
+              <Input
+                id="inStock"
+                name="inStock"
+                type="checkbox"
+                checked={currentProduct.inStock}
+                onChange={handleInputChange}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="inStock">In Stock</Label>
             </div>
             
             <div className="space-y-2">
@@ -360,7 +454,19 @@ const AdminProducts = () => {
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveProduct}>{isEditing ? "Update Product" : "Add Product"}</Button>
+            <Button 
+              onClick={handleSaveProduct}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isEditing ? "Updating..." : "Adding..."}
+                </>
+              ) : (
+                isEditing ? "Update Product" : "Add Product"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

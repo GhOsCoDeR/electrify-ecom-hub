@@ -8,117 +8,75 @@ import {
   ShoppingCart, 
   ArrowUpDown, 
   Grid3X3, 
-  List
+  List,
+  Loader2
 } from "lucide-react";
 
 import ShopLayout from "@/components/layout/ShopLayout";
 import ProductCard from "@/components/shop/ProductCard";
 import { ProductType } from "@/types/product";
-
-// Sample product data (in a real app, this would come from an API)
-const sampleProducts: ProductType[] = [
-  {
-    id: 1,
-    name: "Smart LED Bulb",
-    price: 24.99,
-    image: "https://images.unsplash.com/photo-1587925358603-c2eea5305bbc?q=80&w=880&auto=format&fit=crop",
-    category: "lighting",
-    rating: 4.5,
-    brand: "brightlife",
-    inStock: true,
-    description: "Energy-efficient smart LED bulb with adjustable brightness and color temperature."
-  },
-  {
-    id: 2,
-    name: "Electric Coffee Maker",
-    price: 89.99,
-    image: "https://images.unsplash.com/photo-1570942872213-1242e212d760?q=80&w=1374&auto=format&fit=crop",
-    category: "kitchen-appliances",
-    rating: 4.2,
-    brand: "kitchenmate",
-    inStock: true,
-    description: "Programmable coffee maker with 12-cup capacity and auto shut-off feature."
-  },
-  {
-    id: 3,
-    name: "Wireless Vacuum Cleaner",
-    price: 199.99,
-    image: "https://images.unsplash.com/photo-1558317374-067fb5f30001?q=80&w=880&auto=format&fit=crop",
-    category: "home-appliances",
-    rating: 4.8,
-    brand: "powerplus",
-    inStock: true,
-    description: "Cordless vacuum with powerful suction and up to 40 minutes of runtime."
-  },
-  {
-    id: 4,
-    name: "Smart Home Hub",
-    price: 149.99,
-    image: "https://images.unsplash.com/photo-1558002038-1055907df827?q=80&w=1470&auto=format&fit=crop",
-    category: "smart-devices",
-    rating: 4.7,
-    brand: "smartech",
-    inStock: true,
-    description: "Central hub for controlling all your smart home devices in one place."
-  },
-  {
-    id: 5,
-    name: "Electric Kettle",
-    price: 49.99,
-    image: "https://images.unsplash.com/photo-1594495894542-a46cc73e081a?q=80&w=871&auto=format&fit=crop",
-    category: "kitchen-appliances",
-    rating: 4.4,
-    brand: "kitchenmate",
-    inStock: true,
-    description: "Fast-boiling electric kettle with temperature control and keep-warm function."
-  },
-  {
-    id: 6,
-    name: "Smart Thermostat",
-    price: 129.99,
-    image: "https://images.unsplash.com/photo-1567596996303-0f3545e0541e?q=80&w=1374&auto=format&fit=crop",
-    category: "smart-devices",
-    rating: 4.6,
-    brand: "smartech",
-    inStock: true,
-    description: "Wi-Fi enabled thermostat that learns your schedule and preferences."
-  },
-  {
-    id: 7,
-    name: "Ceiling Fan with Light",
-    price: 159.99,
-    image: "https://images.unsplash.com/photo-1633883504314-3fb84b8a9228?q=80&w=1470&auto=format&fit=crop",
-    category: "lighting",
-    rating: 4.3,
-    brand: "brightlife",
-    inStock: false,
-    description: "Modern ceiling fan with integrated LED light and remote control."
-  },
-  {
-    id: 8,
-    name: "Cordless Power Drill",
-    price: 119.99,
-    image: "https://images.unsplash.com/photo-1504148455328-c376907d081c?q=80&w=1470&auto=format&fit=crop",
-    category: "tools",
-    rating: 4.9,
-    brand: "powerplus",
-    inStock: true,
-    description: "20V lithium-ion cordless drill with variable speed and LED work light."
-  },
-];
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 const ShopPage = () => {
   const [searchParams] = useSearchParams();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortOrder, setSortOrder] = useState<"default" | "price-low" | "price-high" | "name">("default");
-  const [filteredProducts, setFilteredProducts] = useState<ProductType[]>(sampleProducts);
+  const [products, setProducts] = useState<ProductType[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ProductType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
+  // Fetch products from the database
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*');
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Transform the data to match ProductType
+        const transformedProducts: ProductType[] = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description || "",
+          price: Number(item.price),
+          image: item.image || "https://images.unsplash.com/photo-1587925358603-c2eea5305bbc?q=80&w=880&auto=format&fit=crop",
+          category: item.category || "",
+          rating: 4.5, // Default rating since it's not in the database
+          brand: item.brand || "",
+          inStock: item.in_stock === true
+        }));
+        
+        setProducts(transformedProducts);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch products. Please try again.",
+          variant: "destructive"
+        });
+        // Set empty products array
+        setProducts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [toast]);
+
   // Filter products based on URL parameters and search term
   useEffect(() => {
     const categoryFilter = searchParams.get("category");
     
-    let results = [...sampleProducts];
+    let results = [...products];
     
     // Apply category filter if present
     if (categoryFilter) {
@@ -131,7 +89,7 @@ const ShopPage = () => {
       results = results.filter(product => 
         product.name.toLowerCase().includes(lowercasedSearch) || 
         product.description.toLowerCase().includes(lowercasedSearch) ||
-        product.category.toLowerCase().includes(lowercasedSearch)
+        (product.category && product.category.toLowerCase().includes(lowercasedSearch))
       );
     }
     
@@ -152,7 +110,7 @@ const ShopPage = () => {
     }
     
     setFilteredProducts(results);
-  }, [searchParams, searchTerm, sortOrder]);
+  }, [searchParams, searchTerm, sortOrder, products]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -229,8 +187,13 @@ const ShopPage = () => {
         </div>
       </div>
       
-      {/* Products Grid */}
-      {filteredProducts.length === 0 ? (
+      {/* Loading State */}
+      {isLoading ? (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-electric-blue" />
+          <span className="ml-2">Loading products...</span>
+        </div>
+      ) : filteredProducts.length === 0 ? (
         <div className="text-center py-12">
           <h3 className="text-2xl font-semibold mb-2">No products found</h3>
           <p className="text-gray-600">Try adjusting your search or filters.</p>

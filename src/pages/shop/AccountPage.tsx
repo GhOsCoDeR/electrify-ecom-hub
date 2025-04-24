@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,66 +7,274 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import WebsiteLayout from "@/components/layout/WebsiteLayout";
-import { Package, User, Settings, ShoppingBag, Star } from "lucide-react";
+import { Package, User, Settings, ShoppingBag, Star, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
+import { updateUserProfile } from "@/lib/database";
+import { useNavigate } from "react-router-dom";
 
 const AccountPage = () => {
   const { toast } = useToast();
+  const { user, profile } = useAuth();
+  const navigate = useNavigate();
+  
   const [isUpdating, setIsUpdating] = useState(false);
-
-  // Mock user data - in a real app, this would come from context/state/API
+  const [isPasswordUpdating, setIsPasswordUpdating] = useState(false);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+  
+  // Form states
   const [userData, setUserData] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    email: "johndoe@example.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Main Street",
-    city: "New York",
-    state: "NY",
-    zipCode: "10001"
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    zipCode: ""
   });
+  
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+  
+  const [notificationSettings, setNotificationSettings] = useState({
+    emailNotifications: true,
+    orderUpdates: true,
+    promotions: false
+  });
+  
+  // Orders state
+  const [orders, setOrders] = useState<any[]>([]);
 
-  // Mock orders
-  const orders = [
-    { 
-      id: "ORD-2023-001", 
-      date: "2023-04-15", 
-      total: 357.37,
-      status: "Delivered",
-      items: [
-        { name: "Premium Electric Mixer", quantity: 1, price: 249.99 },
-        { name: "Smart LED Bulb", quantity: 2, price: 34.99 }
-      ]
-    },
-    { 
-      id: "ORD-2023-002", 
-      date: "2023-03-22", 
-      total: 129.95,
-      status: "Processing",
-      items: [
-        { name: "Wireless Power Strip", quantity: 1, price: 129.95 }
-      ]
+  // Fetch user data when profile is loaded
+  useEffect(() => {
+    if (profile) {
+      setUserData({
+        firstName: profile.first_name || "",
+        lastName: profile.last_name || "",
+        email: profile.email || "",
+        phone: profile.phone || "",
+        address: profile.address || "",
+        city: profile.city || "",
+        state: profile.state || "",
+        zipCode: profile.postal_code || ""
+      });
     }
-  ];
+    
+    // Fetch orders if user is logged in
+    if (user?.id) {
+      fetchOrders(user.id);
+    }
+  }, [profile, user]);
 
-  const handleUpdateProfile = (e: React.FormEvent) => {
+  // Fetch orders from the database
+  const fetchOrders = async (userId: string) => {
+    setIsLoadingOrders(true);
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            *,
+            products (*)
+          )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error("Error fetching orders:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch orders. Please try again.",
+          variant: "destructive"
+        });
+      } else {
+        console.log("Orders fetched:", data);
+        setOrders(data || []);
+      }
+    } catch (error) {
+      console.error("Exception fetching orders:", error);
+    } finally {
+      setIsLoadingOrders(false);
+    }
+  };
+
+  // Handle profile update
+  const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You need to be logged in to update your profile.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsUpdating(true);
     
-    // Simulate API request
-    setTimeout(() => {
+    try {
+      const updatedProfile = {
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        phone: userData.phone,
+        address: userData.address,
+        city: userData.city,
+        state: userData.state,
+        postal_code: userData.zipCode
+      };
+      
+      const result = await updateUserProfile(user.id, updatedProfile);
+      
       toast({
         title: "Profile updated",
         description: "Your profile information has been updated successfully."
       });
+      
+      // Refresh the page to update the context
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update profile. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setIsUpdating(false);
-    }, 1000);
+    }
+  };
+
+  // Handle change password
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Error", 
+        description: "New passwords don't match.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Error", 
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsPasswordUpdating(true);
+    
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password changed",
+        description: "Your password has been updated successfully."
+      });
+      
+      // Clear password fields
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update password. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsPasswordUpdating(false);
+    }
+  };
+
+  // Handle notification toggle
+  const handleToggleNotification = (setting: keyof typeof notificationSettings) => {
+    setNotificationSettings(prev => ({
+      ...prev,
+      [setting]: !prev[setting]
+    }));
+    
+    toast({
+      title: "Setting updated",
+      description: `Notification setting has been updated.`
+    });
+  };
+
+  // Handle account actions
+  const handleDownloadData = () => {
+    toast({
+      title: "Download initiated",
+      description: "Your data will be prepared and downloaded shortly."
+    });
+  };
+  
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm("Are you sure you want to delete your account? This action cannot be undone.");
+    
+    if (confirmed) {
+      try {
+        const { error } = await supabase.auth.admin.deleteUser(user!.id);
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Account deleted",
+          description: "Your account has been deleted successfully."
+        });
+        
+        // Redirect to home page
+        navigate("/");
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to delete account. Please try again.",
+          variant: "destructive"
+        });
+      }
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setUserData(prev => ({ ...prev, [name]: value }));
   };
+  
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Redirect if not logged in
+  if (!user) {
+    return (
+      <WebsiteLayout>
+        <div className="container mx-auto py-12 px-4 text-center">
+          <h1 className="text-2xl font-bold mb-4">Please login to view your account</h1>
+          <Button onClick={() => navigate("/login")}>Login</Button>
+        </div>
+      </WebsiteLayout>
+    );
+  }
 
   return (
     <WebsiteLayout>
@@ -90,59 +298,64 @@ const AccountPage = () => {
           </TabsList>
           
           <TabsContent value="orders" className="space-y-6">
-            {orders.map(order => (
-              <Card key={order.id}>
-                <CardContent className="p-6">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-bold">{order.id}</h3>
-                      <p className="text-gray-500">Ordered on {new Date(order.date).toLocaleDateString()}</p>
-                    </div>
-                    <div className="mt-2 md:mt-0 flex items-center">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                        ${order.status === 'Delivered' ? 'bg-green-100 text-green-800' : 
-                          order.status === 'Processing' ? 'bg-blue-100 text-blue-800' : 
-                          'bg-yellow-100 text-yellow-800'}`}
-                      >
-                        {order.status}
-                      </span>
-                      <span className="ml-4 font-medium">${order.total.toFixed(2)}</span>
-                    </div>
-                  </div>
-                  
-                  <Separator className="mb-4" />
-                  
-                  <div className="space-y-3">
-                    {order.items.map((item, index) => (
-                      <div key={index} className="flex justify-between">
-                        <div>
-                          <p>{item.name}</p>
-                          <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                        </div>
-                        <p>${(item.price * item.quantity).toFixed(2)}</p>
+            {isLoadingOrders ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-electric-blue" />
+                <span className="ml-2">Loading your orders...</span>
+              </div>
+            ) : orders.length > 0 ? (
+              orders.map(order => (
+                <Card key={order.id}>
+                  <CardContent className="p-6">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-bold">Order #{order.id}</h3>
+                        <p className="text-gray-500">Ordered on {new Date(order.created_at).toLocaleDateString()}</p>
                       </div>
-                    ))}
-                  </div>
-                  
-                  <div className="flex justify-end mt-4 space-x-2">
-                    <Button variant="outline" size="sm" className="flex items-center">
-                      <Package size={16} className="mr-2" />
-                      Track Order
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex items-center">
-                      <Star size={16} className="mr-2" />
-                      Write Review
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            
-            {orders.length === 0 && (
+                      <div className="mt-2 md:mt-0 flex items-center">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                          ${order.status === 'delivered' ? 'bg-green-100 text-green-800' : 
+                            order.status === 'processing' ? 'bg-blue-100 text-blue-800' : 
+                            'bg-yellow-100 text-yellow-800'}`}
+                        >
+                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        </span>
+                        <span className="ml-4 font-medium">${Number(order.total).toFixed(2)}</span>
+                      </div>
+                    </div>
+                    
+                    <Separator className="mb-4" />
+                    
+                    <div className="space-y-3">
+                      {order.order_items.map((item: any) => (
+                        <div key={item.id} className="flex justify-between">
+                          <div>
+                            <p>{item.products?.name || 'Product not available'}</p>
+                            <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                          </div>
+                          <p>${Number(item.price).toFixed(2)}</p>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="flex justify-end mt-4 space-x-2">
+                      <Button variant="outline" size="sm" className="flex items-center">
+                        <Package size={16} className="mr-2" />
+                        Track Order
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex items-center">
+                        <Star size={16} className="mr-2" />
+                        Write Review
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <p className="text-gray-500">You haven't placed any orders yet.</p>
-                  <Button className="mt-4">Start Shopping</Button>
+                  <p className="text-gray-500 mb-4">You haven't placed any orders yet.</p>
+                  <Button onClick={() => navigate("/shop")}>Start Shopping</Button>
                 </CardContent>
               </Card>
             )}
@@ -182,8 +395,10 @@ const AccountPage = () => {
                         name="email"
                         type="email"
                         value={userData.email}
-                        onChange={handleChange}
+                        disabled
+                        className="bg-gray-100"
                       />
+                      <p className="text-xs text-gray-500">Email cannot be changed</p>
                     </div>
                     
                     <div className="space-y-2">
@@ -244,7 +459,12 @@ const AccountPage = () => {
                     className="bg-electric-blue text-white hover:bg-blue-700"
                     disabled={isUpdating}
                   >
-                    {isUpdating ? "Updating..." : "Update Profile"}
+                    {isUpdating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Updating...
+                      </>
+                    ) : "Update Profile"}
                   </Button>
                 </form>
               </CardContent>
@@ -257,21 +477,49 @@ const AccountPage = () => {
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-bold mb-4">Password</h3>
-                    <div className="space-y-4">
+                    <form onSubmit={handleChangePassword} className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="currentPassword">Current Password</Label>
-                        <Input id="currentPassword" type="password" />
+                        <Input 
+                          id="currentPassword" 
+                          name="currentPassword"
+                          type="password" 
+                          value={passwordData.currentPassword}
+                          onChange={handlePasswordChange}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="newPassword">New Password</Label>
-                        <Input id="newPassword" type="password" />
+                        <Input 
+                          id="newPassword" 
+                          name="newPassword"
+                          type="password" 
+                          value={passwordData.newPassword}
+                          onChange={handlePasswordChange}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                        <Input id="confirmPassword" type="password" />
+                        <Input 
+                          id="confirmPassword" 
+                          name="confirmPassword"
+                          type="password" 
+                          value={passwordData.confirmPassword}
+                          onChange={handlePasswordChange}
+                        />
                       </div>
-                      <Button>Change Password</Button>
-                    </div>
+                      <Button 
+                        type="submit"
+                        disabled={isPasswordUpdating}
+                      >
+                        {isPasswordUpdating ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Updating...
+                          </>
+                        ) : "Change Password"}
+                      </Button>
+                    </form>
                   </div>
                   
                   <Separator />
@@ -282,22 +530,58 @@ const AccountPage = () => {
                       <div className="flex items-center justify-between">
                         <Label htmlFor="emailNotifications">Email Notifications</Label>
                         <div className="flex items-center space-x-2">
-                          <Button variant="outline" size="sm">On</Button>
-                          <Button variant="outline" size="sm">Off</Button>
+                          <Button 
+                            variant={notificationSettings.emailNotifications ? "default" : "outline"} 
+                            size="sm"
+                            onClick={() => !notificationSettings.emailNotifications && handleToggleNotification('emailNotifications')}
+                          >
+                            On
+                          </Button>
+                          <Button 
+                            variant={!notificationSettings.emailNotifications ? "default" : "outline"} 
+                            size="sm"
+                            onClick={() => notificationSettings.emailNotifications && handleToggleNotification('emailNotifications')}
+                          >
+                            Off
+                          </Button>
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
                         <Label htmlFor="orderUpdates">Order Updates</Label>
                         <div className="flex items-center space-x-2">
-                          <Button variant="outline" size="sm">On</Button>
-                          <Button variant="outline" size="sm">Off</Button>
+                          <Button 
+                            variant={notificationSettings.orderUpdates ? "default" : "outline"} 
+                            size="sm"
+                            onClick={() => !notificationSettings.orderUpdates && handleToggleNotification('orderUpdates')}
+                          >
+                            On
+                          </Button>
+                          <Button 
+                            variant={!notificationSettings.orderUpdates ? "default" : "outline"} 
+                            size="sm"
+                            onClick={() => notificationSettings.orderUpdates && handleToggleNotification('orderUpdates')}
+                          >
+                            Off
+                          </Button>
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
                         <Label htmlFor="promotions">Promotional Emails</Label>
                         <div className="flex items-center space-x-2">
-                          <Button variant="outline" size="sm">On</Button>
-                          <Button variant="outline" size="sm">Off</Button>
+                          <Button 
+                            variant={notificationSettings.promotions ? "default" : "outline"} 
+                            size="sm"
+                            onClick={() => !notificationSettings.promotions && handleToggleNotification('promotions')}
+                          >
+                            On
+                          </Button>
+                          <Button 
+                            variant={!notificationSettings.promotions ? "default" : "outline"} 
+                            size="sm"
+                            onClick={() => notificationSettings.promotions && handleToggleNotification('promotions')}
+                          >
+                            Off
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -308,8 +592,18 @@ const AccountPage = () => {
                   <div>
                     <h3 className="text-lg font-bold mb-4">Account Actions</h3>
                     <div className="space-y-4">
-                      <Button variant="outline">Download My Data</Button>
-                      <Button variant="destructive">Delete Account</Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={handleDownloadData}
+                      >
+                        Download My Data
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        onClick={handleDeleteAccount}
+                      >
+                        Delete Account
+                      </Button>
                     </div>
                   </div>
                 </div>
