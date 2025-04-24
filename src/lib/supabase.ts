@@ -1,25 +1,7 @@
 
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
-// These should be stored in environment variables in a production app
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-// Check if the environment variables are defined
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('🚨 Supabase Configuration Error 🚨');
-  console.error('Please set up your Supabase environment variables:');
-  console.error('1. Click the green Supabase button on the top right');
-  console.error('2. Connect your Supabase project');
-  console.error('3. Ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set');
-  
-  throw new Error(
-    'Supabase environment variables are missing. Please connect your Supabase project in Lovable.'
-  );
-}
-
-// Now we can safely create the client since we've validated the environment variables
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export { supabase };
 
 export type Tables = {
   products: {
