@@ -148,11 +148,12 @@ export function ParticlesBackground({ className = "", variant = "hero" }: Partic
 
   return (
     <Particles
-      className={`absolute inset-0 -z-10 ${className}`}
+      className={`fixed inset-0 w-full h-full ${className}`}
       id={`tsparticles-${variant}`}
       init={particlesInit}
       loaded={particlesLoaded}
       options={{
+        fullScreen: false,
         background: {
           color: {
             value: "transparent",

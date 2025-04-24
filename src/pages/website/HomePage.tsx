@@ -64,9 +64,9 @@ const HomePage = () => {
   return (
     <WebsiteLayout>
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-electric-darkgray to-gray-800 text-white py-20 overflow-hidden">
-        <ParticlesBackground variant="hero" className="opacity-40" />
-        <div className="container mx-auto px-4 relative">
+      <section className="relative min-h-[600px] bg-gradient-to-r from-electric-darkgray to-gray-800 text-white py-20 overflow-hidden">
+        <ParticlesBackground variant="hero" className="opacity-60" />
+        <div className="container mx-auto px-4 relative z-10">
           <div className="flex flex-col md:flex-row items-center">
             <div className="md:w-1/2 mb-10 md:mb-0">
               <h1 className="text-4xl md:text-5xl font-bold mb-6 animate-fade-in">
@@ -96,9 +96,9 @@ const HomePage = () => {
       </section>
 
       {/* Features Section */}
-      <section className="relative py-20 overflow-hidden">
-        <ParticlesBackground variant="features" className="opacity-30" />
-        <div className="container mx-auto px-4">
+      <section className="relative min-h-[500px] py-20 overflow-hidden">
+        <ParticlesBackground variant="features" className="opacity-40" />
+        <div className="container mx-auto px-4 relative z-10">
           <h2 className="text-3xl font-bold text-center mb-12 animate-fade-in">Why Choose ElectriCo?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
@@ -133,9 +133,9 @@ const HomePage = () => {
       </section>
 
       {/* Products Preview Section */}
-      <section className="relative py-20 bg-gray-50 overflow-hidden">
-        <ParticlesBackground variant="products" className="opacity-20" />
-        <div className="container mx-auto px-4">
+      <section className="relative min-h-[500px] py-20 bg-gray-50 overflow-hidden">
+        <ParticlesBackground variant="products" className="opacity-30" />
+        <div className="container mx-auto px-4 relative z-10">
           <div className="flex justify-between items-center mb-10">
             <h2 className="text-3xl font-bold animate-fade-in">Featured Products</h2>
             <Link to="/shop" className="text-electric-blue hover:underline font-medium hover:scale-105 transition-transform">
@@ -196,9 +196,9 @@ const HomePage = () => {
       </section>
 
       {/* Services Preview Section */}
-      <section className="relative py-20 overflow-hidden">
-        <ParticlesBackground variant="services" className="opacity-15" />
-        <div className="container mx-auto px-4">
+      <section className="relative min-h-[500px] py-20 overflow-hidden">
+        <ParticlesBackground variant="services" className="opacity-25" />
+        <div className="container mx-auto px-4 relative z-10">
           <div className="flex justify-between items-center mb-10">
             <h2 className="text-3xl font-bold animate-fade-in">Our Services</h2>
             <Link to="/services" className="text-electric-blue hover:underline font-medium hover:scale-105 transition-transform">
@@ -240,8 +240,8 @@ const HomePage = () => {
       </section>
 
       {/* Call to Action */}
-      <section className="relative py-16 bg-electric-blue text-white overflow-hidden">
-        <ParticlesBackground variant="cta" className="opacity-30" />
+      <section className="relative min-h-[400px] py-16 bg-electric-blue text-white overflow-hidden">
+        <ParticlesBackground variant="cta" className="opacity-40" />
         <div className="container mx-auto px-4 text-center relative z-10">
           <h2 className="text-3xl font-bold mb-4 animate-fade-in">Ready to Electrify Your Life?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto animate-fade-in animation-delay-200">
