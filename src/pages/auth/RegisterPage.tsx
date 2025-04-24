@@ -89,19 +89,21 @@ const RegisterPage = () => {
       console.error("Registration error:", error);
       
       // Handle specific error messages
+      let displayError = "There was an error creating your account. Please try again.";
+      
       if (error.message?.includes("Email already registered")) {
-        setErrorMessage("This email is already registered. Please try logging in instead.");
+        displayError = "This email is already registered. Please try logging in instead.";
       } else if (error.message?.includes("Password should be at least 6 characters")) {
-        setErrorMessage("Password should be at least 6 characters.");
+        displayError = "Password should be at least 6 characters.";
       } else if (error.message?.includes("duplicate key value violates unique constraint")) {
-        setErrorMessage("This email is already registered. Please try logging in instead.");
-      } else {
-        setErrorMessage(error.message || "There was an error creating your account. Please try again.");
+        displayError = "This email is already registered. Please try logging in instead.";
       }
+      
+      setErrorMessage(displayError);
       
       toast({
         title: "Registration failed",
-        description: "There was an error creating your account. Please try again.",
+        description: displayError,
         variant: "destructive",
       });
     } finally {
