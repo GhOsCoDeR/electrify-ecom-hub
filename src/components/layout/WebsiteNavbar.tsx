@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -47,9 +46,9 @@ const WebsiteNavbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-10 h-10 bg-electric-blue rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-lg">EC</span>
+              <span className="text-white font-bold text-lg">RH</span>
             </div>
-            <span className="font-bold text-xl text-electric-darkgray">ElectriCo</span>
+            <span className="font-bold text-xl text-electric-darkgray">Royal Home Ghana</span>
           </Link>
 
           {/* Welcome message for logged in users */}

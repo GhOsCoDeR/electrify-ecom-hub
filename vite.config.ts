@@ -19,4 +19,27 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Build options optimized for Netlify
+  build: {
+    outDir: 'dist',
+    // Disable sourcemap in production for smaller bundles
+    sourcemap: mode !== 'production',
+    // Optimize chunk size
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          ui: [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-select',
+            '@radix-ui/react-toast',
+            // Add other UI libraries as needed
+          ],
+        }
+      }
+    }
+  },
+  // Base URL for the application - set to '/' for production
+  base: '/',
 }));

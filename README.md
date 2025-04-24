@@ -1,73 +1,53 @@
-# Welcome to your Lovable project
+# Royal Home Ghana
 
-## Project info
+A modern eCommerce platform for home products, built with React, Vite, and Supabase.
 
-**URL**: https://lovable.dev/projects/d5622bd5-77d9-4162-aef0-169269391a2f
+## Deploying to Netlify
 
-## How can I edit this code?
+### Option 1: Deploy via Netlify Dashboard
 
-There are several ways of editing your application.
+1. Push your code to a GitHub repository
+2. Log in to your Netlify account
+3. Click "New site from Git"
+4. Select GitHub and choose your repository
+5. Configure build settings:
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+6. Add environment variables in the Netlify dashboard:
+   - `VITE_SUPABASE_URL`: Your Supabase URL
+   - `VITE_SUPABASE_ANON_KEY`: Your Supabase anon key
+7. Click "Deploy site"
 
-**Use Lovable**
+### Option 2: Deploy with Netlify CLI
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/d5622bd5-77d9-4162-aef0-169269391a2f) and start prompting.
+1. Install Netlify CLI: `npm install -g netlify-cli`
+2. Log in to Netlify: `netlify login`
+3. Initialize your site: `netlify init`
+4. Create a `.env.production.local` file with your Supabase credentials
+5. Deploy your site: `netlify deploy --prod`
 
-Changes made via Lovable will be committed automatically to this repo.
+## Local Development
 
-**Use your preferred IDE**
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Create a `.env.local` file with your Supabase credentials
+4. Start the development server: `npm run dev`
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Features
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Modern UI with responsive design
+- Admin dashboard for order and product management
+- User authentication with Supabase
+- Shopping cart functionality
+- Order tracking and history
+- Demo mode for testing without database permissions
 
-Follow these steps:
+## Technology Stack
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
+- React 18
 - Vite
 - TypeScript
-- React
-- shadcn-ui
 - Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/d5622bd5-77d9-4162-aef0-169269391a2f) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- Shadcn UI
+- Supabase
+- React Router

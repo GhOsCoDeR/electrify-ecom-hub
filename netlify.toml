@@ -1,0 +1,26 @@
+# Royal Home Ghana - Netlify configuration file
+
+[build]
+  # Directory to change to before starting a build
+  base = "/"
+  # Directory that contains the deploy-ready HTML files and assets
+  publish = "dist"
+  # Build command
+  command = "npm run build"
+
+# Handle SPA routing - redirect all paths to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Environment variables for production (you can also set these in Netlify UI)
+[build.environment]
+  NODE_VERSION = "18.16.0"
+  SITE_NAME = "Royal Home Ghana"
+
+# Optimize asset caching
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable" 
