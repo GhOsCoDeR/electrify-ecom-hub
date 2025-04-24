@@ -65,6 +65,41 @@ CREATE TABLE IF NOT EXISTS product_reviews (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Store settings table
+CREATE TABLE IF NOT EXISTS store_settings (
+  id SERIAL PRIMARY KEY,
+  store_name VARCHAR(255) NOT NULL DEFAULT 'ElectriCo',
+  contact_email VARCHAR(255),
+  logo_url VARCHAR(255),
+  favicon_url VARCHAR(255),
+  email_notifications BOOLEAN DEFAULT TRUE,
+  maintenance_mode BOOLEAN DEFAULT FALSE,
+  currency VARCHAR(10) DEFAULT 'USD',
+  tax_rate DECIMAL(5, 2) DEFAULT 0,
+  shipping_fee DECIMAL(10, 2) DEFAULT 0,
+  enable_guest_checkout BOOLEAN DEFAULT TRUE,
+  theme_color VARCHAR(20) DEFAULT '#0066cc',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Insert default store settings if not exists
+INSERT INTO store_settings (id, store_name, contact_email)
+VALUES (1, 'ElectriCo', 'contact@electrico.com')
+ON CONFLICT (id) DO NOTHING;
+
+-- Enable RLS on store_settings
+ALTER TABLE store_settings ENABLE ROW LEVEL SECURITY;
+
+-- Only admins can view and modify store settings
+CREATE POLICY "Store settings are viewable by everyone" 
+ON store_settings FOR SELECT USING (true);
+
+CREATE POLICY "Store settings can be updated by admins" 
+ON store_settings FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM users WHERE users.id = auth.uid() AND users.admin = true)
+);
+
 -- Create RLS policies
 
 -- Products are viewable by everyone, but only admins can modify

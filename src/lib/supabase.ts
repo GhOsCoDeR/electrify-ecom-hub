@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export { supabase };
@@ -54,5 +53,21 @@ export type Tables = {
     product_id: number;
     name: string;
     value: string;
+  };
+  store_settings: {
+    id: number;
+    store_name: string;
+    contact_email: string;
+    logo_url: string | null;
+    favicon_url: string | null;
+    email_notifications: boolean;
+    maintenance_mode: boolean;
+    currency: string;
+    tax_rate: number;
+    shipping_fee: number;
+    enable_guest_checkout: boolean;
+    theme_color: string;
+    created_at: string;
+    updated_at: string;
   };
 };

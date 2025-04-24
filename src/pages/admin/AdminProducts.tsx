@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -286,7 +285,7 @@ const AdminProducts = () => {
       </div>
       
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{isEditing ? "Edit Product" : "Add New Product"}</DialogTitle>
             <DialogDescription>
@@ -298,8 +297,8 @@ const AdminProducts = () => {
             currentProduct={currentProduct}
             isEditing={isEditing}
             isSaving={isSaving}
-            categories={categories}
-            brands={brands}
+            categories={categories.map(c => c.name)}
+            brands={brands.map(b => b.name)}
             onSave={handleSaveProduct}
             onCancel={() => setIsDialogOpen(false)}
             onChange={handleInputChange}

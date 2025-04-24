@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { Input } from './input';
 import { Button } from './button';
 import { UploadCloud, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import { v4 as uuidv4 } from '@supabase/supabase-js';
+import { v4 as uuidv4 } from 'uuid';
 
 interface FileUploadProps {
   value: string;

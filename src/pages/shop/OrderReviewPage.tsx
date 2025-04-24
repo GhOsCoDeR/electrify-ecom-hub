@@ -1,16 +1,21 @@
-
 import { useLocation, useNavigate } from "react-router-dom";
 import WebsiteLayout from "@/components/layout/WebsiteLayout";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 const OrderReviewPage = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { cartItems, clearCart } = useCart();
+  const { user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   if (!state?.orderData || !state?.formData) {
     navigate('/checkout');
@@ -25,25 +30,73 @@ const OrderReviewPage = () => {
   }
 
   const handleConfirmOrder = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication error",
+        description: "You must be logged in to place an order.",
+        variant: "destructive",
+      });
+      navigate('/login');
+      return;
+    }
+
+    setIsSubmitting(true);
+    
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 1. Create the order in the database
+      const { data: newOrder, error: orderError } = await supabase
+        .from('orders')
+        .insert([
+          {
+            user_id: user.id,
+            status: 'pending',
+            total: orderData.total,
+          }
+        ])
+        .select()
+        .single();
       
-      // Clear the cart after successful order
+      if (orderError) throw orderError;
+      
+      // 2. Create the order items
+      const orderItems = cartItems.map(item => ({
+        order_id: newOrder.id,
+        product_id: item.id,
+        quantity: item.quantity,
+        price: item.price
+      }));
+      
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+      
+      if (itemsError) throw itemsError;
+      
+      // 3. Generate an order number
+      const orderNumber = Math.floor(100000 + Math.random() * 900000);
+      
+      // 4. Clear the cart after successful order
       clearCart();
       
+      // 5. Navigate to success page
       navigate('/order-success', {
         state: {
-          orderNumber: Math.floor(100000 + Math.random() * 900000),
+          orderNumber,
+          orderId: newOrder.id,
           orderData,
           formData
         }
       });
+      
     } catch (error) {
+      console.error("Error saving order:", error);
       toast({
         title: "Error confirming order",
-        description: "There was a problem confirming your order. Please try again.",
+        description: "There was a problem saving your order. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -152,10 +205,21 @@ const OrderReviewPage = () => {
             </div>
 
             <div className="flex flex-col gap-4">
-              <Button onClick={handleConfirmOrder} className="w-full bg-electric-blue text-white hover:bg-blue-700">
-                Confirm Order
+              <Button 
+                onClick={handleConfirmOrder} 
+                className="w-full bg-electric-blue text-white hover:bg-blue-700"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  "Confirm Order"
+                )}
               </Button>
-              <Button variant="outline" onClick={() => navigate('/checkout')} className="w-full">
+              <Button variant="outline" onClick={() => navigate('/checkout')} className="w-full" disabled={isSubmitting}>
                 Back to Checkout
               </Button>
             </div>

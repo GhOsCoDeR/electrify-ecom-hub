@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import WebsiteLayout from "@/components/layout/WebsiteLayout";
-import { Package, User, Settings, ShoppingBag, Star, Loader2 } from "lucide-react";
+import { Package, User, Settings, ShoppingBag, Star, Loader2, RefreshCw } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -22,6 +21,7 @@ const AccountPage = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isPasswordUpdating, setIsPasswordUpdating] = useState(false);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+  const [isRefreshingOrders, setIsRefreshingOrders] = useState(false);
   
   // Form states
   const [userData, setUserData] = useState({
@@ -71,6 +71,47 @@ const AccountPage = () => {
     }
   }, [profile, user]);
 
+  // Set up real-time subscription for order updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    // Subscribe to changes on the orders table for this user
+    const subscription = supabase
+      .channel('orders-channel')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Order updated:', payload);
+          // Update the order in the local state
+          setOrders(prevOrders => 
+            prevOrders.map(order => 
+              order.id === payload.new.id 
+                ? { ...order, ...payload.new } 
+                : order
+            )
+          );
+
+          // Show a toast notification
+          toast({
+            title: "Order status updated",
+            description: `Order #${payload.new.id} is now ${payload.new.status}`,
+          });
+        }
+      )
+      .subscribe();
+
+    // Clean up subscription when component unmounts
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [user?.id, toast]);
+
   // Fetch orders from the database
   const fetchOrders = async (userId: string) => {
     setIsLoadingOrders(true);
@@ -102,6 +143,36 @@ const AccountPage = () => {
       console.error("Exception fetching orders:", error);
     } finally {
       setIsLoadingOrders(false);
+    }
+  };
+  
+  // Refresh orders manually
+  const refreshOrders = async () => {
+    if (!user?.id) return;
+    
+    setIsRefreshingOrders(true);
+    await fetchOrders(user.id);
+    setIsRefreshingOrders(false);
+    
+    toast({
+      title: "Orders refreshed",
+      description: "Your order information has been updated.",
+    });
+  };
+
+  // Get status badge color
+  const getStatusBadgeClass = (status: string) => {
+    switch(status) {
+      case 'delivered':
+        return 'bg-green-100 text-green-800';
+      case 'shipped':
+        return 'bg-purple-100 text-purple-800';
+      case 'processing':
+        return 'bg-blue-100 text-blue-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-yellow-100 text-yellow-800';  // pending or other status
     }
   };
 
@@ -298,6 +369,23 @@ const AccountPage = () => {
           </TabsList>
           
           <TabsContent value="orders" className="space-y-6">
+            <div className="flex justify-end mb-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={refreshOrders} 
+                disabled={isRefreshingOrders || isLoadingOrders}
+                className="flex items-center"
+              >
+                {isRefreshingOrders ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <RefreshCw size={16} className="mr-2" />
+                )}
+                Refresh Orders
+              </Button>
+            </div>
+            
             {isLoadingOrders ? (
               <div className="flex justify-center items-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-electric-blue" />
@@ -314,9 +402,7 @@ const AccountPage = () => {
                       </div>
                       <div className="mt-2 md:mt-0 flex items-center">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                          ${order.status === 'delivered' ? 'bg-green-100 text-green-800' : 
-                            order.status === 'processing' ? 'bg-blue-100 text-blue-800' : 
-                            'bg-yellow-100 text-yellow-800'}`}
+                          ${getStatusBadgeClass(order.status)}`}
                         >
                           {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                         </span>
@@ -339,14 +425,21 @@ const AccountPage = () => {
                     </div>
                     
                     <div className="flex justify-end mt-4 space-x-2">
-                      <Button variant="outline" size="sm" className="flex items-center">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex items-center"
+                        disabled={order.status === 'cancelled'}
+                      >
                         <Package size={16} className="mr-2" />
-                        Track Order
+                        {order.status === 'delivered' ? 'View Details' : 'Track Order'}
                       </Button>
-                      <Button variant="outline" size="sm" className="flex items-center">
-                        <Star size={16} className="mr-2" />
-                        Write Review
-                      </Button>
+                      {order.status === 'delivered' && (
+                        <Button variant="outline" size="sm" className="flex items-center">
+                          <Star size={16} className="mr-2" />
+                          Write Review
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

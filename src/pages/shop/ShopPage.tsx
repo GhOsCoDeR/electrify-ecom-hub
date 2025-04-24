@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -75,12 +74,34 @@ const ShopPage = () => {
   // Filter products based on URL parameters and search term
   useEffect(() => {
     const categoryFilter = searchParams.get("category");
+    const brandFilter = searchParams.get("brands");
+    const minPrice = searchParams.get("minPrice");
+    const maxPrice = searchParams.get("maxPrice");
     
     let results = [...products];
     
     // Apply category filter if present
     if (categoryFilter) {
-      results = results.filter(product => product.category === categoryFilter);
+      results = results.filter(product => 
+        product.category.toLowerCase().replace(/\s+/g, '-') === categoryFilter
+      );
+    }
+    
+    // Apply brand filter if present
+    if (brandFilter) {
+      const brandIds = brandFilter.split(',');
+      results = results.filter(product => 
+        brandIds.includes(product.brand.toLowerCase().replace(/\s+/g, '-'))
+      );
+    }
+    
+    // Apply price filter if present
+    if (minPrice) {
+      results = results.filter(product => product.price >= Number(minPrice));
+    }
+    
+    if (maxPrice) {
+      results = results.filter(product => product.price <= Number(maxPrice));
     }
     
     // Apply search filter if present
