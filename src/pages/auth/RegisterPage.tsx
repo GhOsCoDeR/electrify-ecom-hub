@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -65,21 +64,15 @@ const RegisterPage = () => {
       console.log("Starting registration process for:", data.email);
       
       // Register the user with Supabase Auth
-      const userData = await signUp(data.email, data.password);
-      console.log("Signup response:", userData);
+      const { user } = await signUp(data.email, data.password);
       
-      if (!userData) {
-        console.error("No response data from signUp");
-        throw new Error("Failed to create user account");
-      }
-      
-      if (!userData.user) {
+      if (!user) {
         console.error("No user data returned from signUp");
         throw new Error("Failed to create user account");
       }
       
       // Create the user profile in the database
-      await createUserProfile(userData.user.id, {
+      await createUserProfile(user.id, {
         email: data.email,
         first_name: data.firstName,
         last_name: data.lastName

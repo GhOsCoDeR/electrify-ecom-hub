@@ -15,16 +15,11 @@ export const signUp = async (email: string, password: string) => {
     throw error;
   }
   
-  console.log('Sign up response data:', data);
+  console.log('Signup response:', data.user);
   
   // Check if user is actually created or if email confirmation is required
   if (data?.user?.identities?.length === 0) {
     throw new Error('Email already registered');
-  }
-  
-  if (!data.user) {
-    console.error('No user returned from signUp');
-    throw new Error('Failed to create user account. Please try again.');
   }
   
   return data;
@@ -118,12 +113,22 @@ export const createUserProfile = async (userId: string, profileData: {
   
   try {
     // First check if user already exists in the profile table
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: checkError } = await supabase
       .from('users')
       .select('id')
       .eq('id', userId)
       .single();
       
+    if (checkError) {
+      if (checkError.code === 'PGRST116') {
+        // User doesn't exist, create the profile
+        console.log('User profile does not exist, creating new profile');
+      } else {
+        console.error('Error checking existing user:', checkError);
+        throw checkError;
+      }
+    }
+    
     if (existingUser) {
       console.log('User profile already exists:', existingUser);
       return existingUser;
@@ -137,31 +142,18 @@ export const createUserProfile = async (userId: string, profileData: {
           ...profileData
         }
       ])
-      .select()
-      .single();
+      .select();
     
     if (error) {
       console.error('Error creating user profile:', error);
-      console.error('Error details:', error.details, error.hint, error.message);
-      
-      // If we get a foreign key constraint error, it could be that the auth.users record
-      // exists but we're having trouble inserting into the profile table
-      if (error.message?.includes('foreign key constraint') || 
-          error.message?.includes('violates row-level security policy')) {
-        console.log('This appears to be an RLS policy issue - bypassing profile creation for now');
-        // Return a basic profile anyway so the app can continue
-        return { id: userId, ...profileData };
-      }
-      
       throw error;
     }
     
     console.log('User profile created successfully:', data);
-    return data;
+    return data[0];
   } catch (error) {
     console.error('Error in createUserProfile:', error);
-    // Instead of throwing, return a basic profile so the app can continue
-    return { id: userId, ...profileData };
+    throw error;
   }
 };
 
@@ -172,16 +164,16 @@ export const getUserProfile = async (userId: string) => {
       .from('users')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
       
     if (error) {
       console.error('Error fetching user profile:', error);
-      return null;
+      throw error;
     }
     
     return data;
   } catch (error) {
     console.error('Error in getUserProfile:', error);
-    return null;
+    throw error;
   }
 };

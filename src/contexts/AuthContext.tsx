@@ -35,7 +35,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserProfile = async (userId: string) => {
     try {
       const userProfile = await getUserProfile(userId);
-      setProfile(userProfile);
+      if (userProfile) {
+        setProfile(userProfile);
+      } else {
+        console.log("No profile found for user:", userId);
+        setProfile(null);
+      }
     } catch (error) {
       console.error("Error fetching user profile:", error);
       setProfile(null);
@@ -67,7 +72,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(currentUser);
       
       if (currentUser?.id) {
-        await fetchUserProfile(currentUser.id);
+        // Use setTimeout to avoid potential deadlocks with Supabase auth state changes
+        setTimeout(() => {
+          fetchUserProfile(currentUser.id);
+        }, 0);
       } else {
         setProfile(null);
       }
@@ -88,9 +96,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (user?.id) {
         await fetchUserProfile(user.id);
+        if (!profile) {
+          throw new Error("Login failed");
+        }
       }
       
-      return user;
+      return { user, profile };
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { user } = await signUp(email, password);
       setUser(user);
-      return user;
+      return { user };
     } finally {
       setIsLoading(false);
     }
