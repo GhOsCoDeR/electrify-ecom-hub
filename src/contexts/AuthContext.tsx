@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
-import { getCurrentUser, signIn, signOut, signUp, getUserProfile, createUserProfile } from '@/lib/auth';
+import { getCurrentUser, signIn, signOut, signUp, getUserProfile, createUserProfile, ensureUserProfile } from '@/lib/auth';
 
 type UserProfile = {
   id: string;
@@ -32,18 +32,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = async (userId: string, email: string) => {
     try {
-      const userProfile = await getUserProfile(userId);
-      if (userProfile) {
-        setProfile(userProfile);
-      } else {
+      // First try to get the existing profile
+      let userProfile = await getUserProfile(userId);
+      
+      // If no profile exists, create a minimal one
+      if (!userProfile) {
         console.log("No profile found for user:", userId);
-        setProfile(null);
+        console.log("Creating minimal profile with email:", email);
+        
+        try {
+          userProfile = await createUserProfile(userId, {
+            email: email,
+            first_name: '',
+            last_name: ''
+          });
+        } catch (profileError) {
+          console.error("Error creating minimal profile:", profileError);
+          // Continue - we'll handle this case in the login function
+        }
       }
+      
+      setProfile(userProfile);
+      return userProfile;
     } catch (error) {
       console.error("Error fetching user profile:", error);
       setProfile(null);
+      return null;
     }
   };
 
@@ -53,8 +69,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
         
-        if (currentUser?.id) {
-          await fetchUserProfile(currentUser.id);
+        if (currentUser?.id && currentUser?.email) {
+          await fetchUserProfile(currentUser.id, currentUser.email);
         }
       } catch (error) {
         setUser(null);
@@ -67,14 +83,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       
-      if (currentUser?.id) {
+      if (currentUser?.id && currentUser?.email) {
         // Use setTimeout to avoid potential deadlocks with Supabase auth state changes
         setTimeout(() => {
-          fetchUserProfile(currentUser.id);
+          fetchUserProfile(currentUser.id, currentUser.email);
         }, 0);
       } else {
         setProfile(null);
@@ -94,10 +110,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { user } = await signIn(email, password);
       setUser(user);
       
-      if (user?.id) {
-        await fetchUserProfile(user.id);
-        if (!profile) {
-          throw new Error("Login failed");
+      if (user?.id && user?.email) {
+        // Create profile if it doesn't exist
+        const userProfile = await fetchUserProfile(user.id, user.email);
+        
+        if (!userProfile) {
+          // If profile still doesn't exist after attempt to create, handle the error
+          console.error("Failed to get or create user profile");
         }
       }
       

@@ -154,9 +154,34 @@ export const getUserProfile = async (userId: string) => {
       throw error;
     }
     
+    console.log('User profile fetched:', data ? 'Profile found' : 'No profile found');
     return data;
   } catch (error) {
     console.error('Error in getUserProfile:', error);
+    throw error;
+  }
+};
+
+// Create empty user profile if it doesn't exist
+export const ensureUserProfile = async (userId: string, email: string) => {
+  try {
+    // First, check if profile exists
+    const profile = await getUserProfile(userId);
+    
+    // If no profile exists, create a minimal one
+    if (!profile) {
+      console.log('No profile found, creating minimal profile for:', userId);
+      const result = await createUserProfile(userId, {
+        email: email,
+        first_name: '',
+        last_name: ''
+      });
+      return result;
+    }
+    
+    return profile;
+  } catch (error) {
+    console.error('Error in ensureUserProfile:', error);
     throw error;
   }
 };

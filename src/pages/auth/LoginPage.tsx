@@ -13,6 +13,8 @@ import WebsiteLayout from "@/components/layout/WebsiteLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ensureUserProfile } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 // Form validation schema
 const loginSchema = z.object({
@@ -47,10 +49,25 @@ const LoginPage = () => {
     
     try {
       // Sign in with Supabase
-      const userData = await signIn(data.email, data.password);
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
       
-      if (!userData || !userData.user) {
+      if (error) {
+        throw error;
+      }
+      
+      if (!authData.user) {
         throw new Error("Login failed");
+      }
+      
+      // Try to ensure a profile exists for this user
+      try {
+        await ensureUserProfile(authData.user.id, data.email);
+      } catch (profileError) {
+        console.error("Profile creation error:", profileError);
+        // Continue with login even if profile creation fails
       }
       
       toast({
@@ -68,6 +85,8 @@ const LoginPage = () => {
         setErrorMessage("Invalid email or password. Please try again.");
       } else if (error.message?.includes("Email not confirmed")) {
         setErrorMessage("Please confirm your email before logging in.");
+      } else if (error.message?.includes("row-level security policy")) {
+        setErrorMessage("Authorization error. Please contact support.");
       } else {
         setErrorMessage(error.message || "Login failed. Please try again.");
       }
