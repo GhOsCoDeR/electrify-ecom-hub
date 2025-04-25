@@ -41,7 +41,7 @@ export function FileUpload({ value, onChange, onUploading }: FileUploadProps) {
       return;
     }
 
-    setIsLoading(true);
+    setIsUploading(true);
     if (onUploading) onUploading(true);
 
     try {
@@ -77,7 +77,7 @@ export function FileUpload({ value, onChange, onUploading }: FileUploadProps) {
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setIsUploading(false);
       if (onUploading) onUploading(false);
     }
   };
