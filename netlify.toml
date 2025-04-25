@@ -1,3 +1,4 @@
+
 # Royal Home Ghana - Netlify configuration file
 
 [build]
@@ -20,6 +21,8 @@
 [build.environment]
   NODE_VERSION = "18.16.0"
   SITE_NAME = "Royal Home Ghana"
+  VITE_SUPABASE_URL = "https://brvpslvsckjweenkyaxa.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJydnBzbHZzY2tqd2Vlbmt5YXhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0NDM2MzMsImV4cCI6MjA2MTAxOTYzM30.w-6cK_0_rhyPehMa9nsZSMLH8Yw30zTUFsilWoSrXd0"
 
 # Optimize asset caching
 [[headers]]
@@ -39,4 +42,4 @@
     "src/lib/supabase.ts"
   ]
   # Only scan specific file types
-  SECRETS_SCAN_FILE_EXTENSIONS = [".js", ".ts", ".jsx", ".tsx", ".json", ".env"] 
+  SECRETS_SCAN_FILE_EXTENSIONS = [".js", ".ts", ".jsx", ".tsx", ".json", ".env"]
