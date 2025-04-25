@@ -13,11 +13,11 @@ import { useToast } from "@/hooks/use-toast";
 
 // Define a settings type
 interface StoreSettings {
-  id?: string;
+  id?: number;
   store_name: string;
   contact_email: string;
-  logo_url?: string;
-  favicon_url?: string;
+  logo_url?: string | null;
+  favicon_url?: string | null;
   email_notifications: boolean;
   maintenance_mode: boolean;
   currency: string;
@@ -64,6 +64,7 @@ const AdminSettings = () => {
     const fetchSettings = async () => {
       setIsLoading(true);
       try {
+        // Use explicit typing for the response
         const { data, error } = await supabase
           .from('store_settings')
           .select('*')
@@ -164,12 +165,14 @@ const AdminSettings = () => {
         if (error) throw error;
         
         // Update local state with the new ID
-        setSettings(prev => ({
-          ...prev,
-          id: data.id,
-          created_at: data.created_at,
-          updated_at: data.updated_at
-        }));
+        if (data) {
+          setSettings(prev => ({
+            ...prev,
+            id: data.id,
+            created_at: data.created_at,
+            updated_at: data.updated_at
+          }));
+        }
       }
       
       toast({

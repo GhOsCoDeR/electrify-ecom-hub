@@ -223,6 +223,57 @@ export type Database = {
         }
         Relationships: []
       }
+      store_settings: {
+        Row: {
+          contact_email: string | null
+          created_at: string | null
+          currency: string | null
+          email_notifications: boolean | null
+          enable_guest_checkout: boolean | null
+          favicon_url: string | null
+          id: number
+          logo_url: string | null
+          maintenance_mode: boolean | null
+          shipping_fee: number | null
+          store_name: string
+          tax_rate: number | null
+          theme_color: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          contact_email?: string | null
+          created_at?: string | null
+          currency?: string | null
+          email_notifications?: boolean | null
+          enable_guest_checkout?: boolean | null
+          favicon_url?: string | null
+          id?: number
+          logo_url?: string | null
+          maintenance_mode?: boolean | null
+          shipping_fee?: number | null
+          store_name?: string
+          tax_rate?: number | null
+          theme_color?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          contact_email?: string | null
+          created_at?: string | null
+          currency?: string | null
+          email_notifications?: boolean | null
+          enable_guest_checkout?: boolean | null
+          favicon_url?: string | null
+          id?: number
+          logo_url?: string | null
+          maintenance_mode?: boolean | null
+          shipping_fee?: number | null
+          store_name?: string
+          tax_rate?: number | null
+          theme_color?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           address: string | null

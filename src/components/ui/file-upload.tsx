@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Input } from './input';
 import { Button } from './button';
@@ -40,7 +41,7 @@ export function FileUpload({ value, onChange, onUploading }: FileUploadProps) {
       return;
     }
 
-    setIsUploading(true);
+    setIsLoading(true);
     if (onUploading) onUploading(true);
 
     try {
@@ -76,7 +77,7 @@ export function FileUpload({ value, onChange, onUploading }: FileUploadProps) {
         variant: "destructive"
       });
     } finally {
-      setIsUploading(false);
+      setIsLoading(false);
       if (onUploading) onUploading(false);
     }
   };
